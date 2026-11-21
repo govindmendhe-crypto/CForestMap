@@ -1,0 +1,20 @@
+{
+	"appId": "com.foresttreatmentmap.app",
+	"appName": "Forest Treatment Map Generator",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"android": {
+		"backgroundColor": "#064e3b",
+		"allowMixedContent": false,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": false
+	},
+	"plugins": {
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#064e3b"
+		}
+	}
+}

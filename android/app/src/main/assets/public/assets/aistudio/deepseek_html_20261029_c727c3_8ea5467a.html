@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forest Treatment Map Generator</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&family=Noto+Sans+Oriya:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Sans+Ol+Chiki:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+#selectLanguage { max-width: 140px; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+<header class="bg-emerald-950 text-white shadow-md sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div class="bg-emerald-800 p-2 rounded-lg text-emerald-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-bold leading-tight flex items-center gap-2">Forest Treatment Map Generator
+          <span class="text-xs font-normal bg-emerald-800/80 text-emerald-200 px-2 py-0.5 rounded border border-emerald-700">Grid Base Map</span>
+        </h1>
+        <p class="text-[11px] sm:text-xs text-emerald-300">Direct map generation from KML / KMZ / GPX files</p>
+        <p class="text-[10px] text-emerald-400/80 font-sans mt-0.5">Designed by: Govind Mendhe | Contact: govind.mendhe@gmail.com</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="selectLanguage" class="px-2 py-1.5 bg-emerald-800 text-white border border-emerald-700 rounded text-xs font-semibold focus:outline-none">
+        <option value="en">English</option>
+        <option value="hi">हिंदी (Hindi)</option>
+        <option value="mr" selected>मराठी (Marathi)</option>
+        <option value="bn">বাংলা (Bengali)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="gu">ગુજરાતી (Gujarati)</option>
+        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        <option value="ml">മലയാളം (Malayalam)</option>
+        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+        <option value="or">ଓଡ଼ିଆ (Odia)</option>
+        <option value="as">অসমীয়া (Assamese)</option>
+        <option value="ur">اردو (Urdu)</option>
+        <option value="sa">संस्कृतम् (Sanskrit)</option>
+        <option value="kok">कोंकणी (Konkani)</option>
+        <option value="mai">मैथिली (Maithili)</option>
+        <option value="doi">डोगरी (Dogri)</option>
+        <option value="sat">ᱥᱟᱱᱛᱟᱲᱤ (Santali)</option>
+        <option value="ks">کٲشُر (Kashmiri)</option>
+        <option value="sd">سنڌي (Sindhi)</option>
+        <option value="brx">बड़ो (Bodo)</option>
+        <option value="mni">মৈতৈলোন্ (Manipuri)</option>
+        <option value="ne">नेपाली (Nepali)</option>
+      </select>
+      <button id="btnGPS" class="px-3 py-1.5 bg-blue-800 hover:bg-blue-700 text-white rounded text-xs font-semibold transition flex items-center gap-1.5 shadow-sm border border-blue-700">
+        <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span id="gpsBtnText">Find Current Grid Location (GPS)</span>
+      </button>
+      <button id="btnExportPDF" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white rounded text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        PDF Download
+      </button>
+      <button id="btnShareWhatsApp" class="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771z"/></svg>
+        Share on WhatsApp
+      </button>
+    </div>
+  </div>
+</header>
+
+<div id="liveLocationBanner" class="bg-blue-50 border-b border-blue-200 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 text-blue-900">
+  <div class="flex items-center gap-2">
+    <span class="inline-block w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
+    <span class="font-bold">GPS Grid Location Viewer:</span>
+    <span id="gridLocationStatus" class="font-medium text-blue-800">Click on any grid on the map or tap "Find Current Grid Location".</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <button id="btnPlaceLocation" class="text-[11px] underline text-blue-700 hover:text-blue-900 font-medium">Click map to place pin</button>
+    <span class="text-blue-300">|</span>
+    <button id="btnSimulateGPS" class="text-[11px] underline text-blue-700 hover:text-blue-900 font-medium">Simulate Location</button>
+    <span class="text-blue-300">|</span>
+    <button id="btnClearGPS" class="text-[11px] text-slate-500 hover:text-slate-800">Remove Pin</button>
+  </div>
+</div>
+
+<main class="max-w-7xl mx-auto w-full px-4 py-4 flex-1 flex flex-col lg:flex-row gap-5">
+  <aside class="w-full lg:w-88 xl:w-96 flex-shrink-0 flex flex-col gap-4">
+    <section class="bg-white rounded-xl shadow-sm border border-emerald-300 p-4 bg-emerald-50/20">
+      <div class="flex items-center justify-between border-b border-emerald-100 pb-2 mb-3">
+        <h2 class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <span data-i18n="import_title">KML / KMZ / GPX File Import</span>
+        </h2>
+      </div>
+      <div class="space-y-3 text-xs">
+        <input type="file" id="inputWorkingKML" accept=".kml,.kmz,.gpx,.xml" class="hidden">
+        <input type="file" id="inputNonWorkingKML" accept=".kml,.kmz,.gpx,.xml" class="hidden">
+        <div class="p-2.5 bg-white border border-emerald-200 rounded-lg">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-emerald-950 flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span><span data-i18n="working_area">1. Working Area</span></span>
+            <span id="statusWorkingKML" class="text-[10px] text-slate-500 font-mono">Not selected</span>
+          </div>
+          <button id="btnUploadWorkingKML" class="w-full py-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded font-medium flex items-center justify-center gap-1.5 transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <span data-i18n="select_working_file">Select Working Area File</span>
+          </button>
+        </div>
+        <div class="p-2.5 bg-white border border-amber-200 rounded-lg">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-amber-950 flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span><span data-i18n="non_working_area">2. Non-Working Area</span></span>
+            <span id="statusNonWorkingKML" class="text-[10px] text-slate-500 font-mono">Not selected</span>
+          </div>
+          <div class="space-y-2">
+            <button id="btnUploadNonWorkingKML" class="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded font-medium flex items-center justify-center gap-1.5 transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              <span data-i18n="select_non_working_file">Select Non-Working Area File</span>
+            </button>
+            <label class="flex items-center gap-2 p-1.5 rounded bg-amber-50/60 border border-amber-200 cursor-pointer">
+              <input id="checkNonWorkNil" type="checkbox" class="rounded text-amber-600">
+              <span class="font-bold text-amber-900 text-[11px]">Non-Working Area is Nil</span>
+            </label>
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-1">
+          <button id="btnLoadDemoMap" class="text-[11px] text-emerald-800 hover:text-emerald-950 underline font-medium">Load Sample Map</button>
+          <button id="btnClearAllVectors" class="text-[11px] text-rose-600 hover:text-rose-800">Clear Map</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-red-200 p-4 bg-red-50/20">
+      <h2 class="text-xs font-bold text-red-900 uppercase tracking-wider border-b border-red-100 pb-2 mb-3 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        <span>Baseline Alignment</span>
+      </h2>
+      <div class="space-y-2 text-xs">
+        <label class="flex items-center gap-2 p-2 rounded hover:bg-red-50 cursor-pointer border border-red-200">
+          <input type="radio" name="baselineOption" value="grid_parallel" checked class="text-red-600">
+          <div><span class="font-bold text-red-900 text-[11px]">Grid-Parallel (Straight Horizontal)</span><p class="text-[10px] text-red-700">Baseline runs strictly straight & horizontal along the grid axis</p></div>
+        </label>
+        <label class="flex items-center gap-2 p-2 rounded hover:bg-red-50 cursor-pointer border border-red-200">
+          <input type="radio" name="baselineOption" value="longest_axis" class="text-red-600">
+          <div><span class="font-bold text-red-900 text-[11px]">Longest Axis / Ridge Line</span><p class="text-[10px] text-red-700">Along principal axis with compass bearing annotation</p></div>
+        </label>
+        <div class="pt-1">
+          <span id="labelLongestDist" class="text-[11px] font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">Axis: 0 m</span>
+          <span id="labelBearing" class="text-[11px] font-mono font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200 ml-1">Bearing: --°</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3">Custom Grid & Scale</h2>
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Grid Size (m × m)</label>
+          <select id="selectGridSize" class="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white font-medium">
+            <option value="100x100" selected>100 × 100 m</option>
+            <option value="50x100">50 × 100 m</option>
+            <option value="50x50">50 × 50 m</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="customGridFields" class="hidden grid grid-cols-2 gap-2">
+          <div><label class="block text-[10px] text-slate-600 mb-0.5">Width (m)</label><input id="inputGridWidth" type="number" value="100" class="w-full px-2 py-1 border border-slate-300 rounded text-xs"></div>
+          <div><label class="block text-[10px] text-slate-600 mb-0.5">Height (m)</label><input id="inputGridHeight" type="number" value="100" class="w-full px-2 py-1 border border-slate-300 rounded text-xs"></div>
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Map Scale</label>
+          <select id="selectScale" class="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white font-medium">
+            <option value="2cm_100m" selected>2 cm = 100 m</option>
+            <option value="1cm_100m">1 cm = 100 m</option>
+            <option value="1cm_50m">1 cm = 50 m</option>
+            <option value="1cm_200m">1 cm = 200 m</option>
+            <option value="custom">Custom Scale…</option>
+          </select>
+        </div>
+        <div id="customScaleFields" class="hidden p-2 bg-slate-50 border border-slate-200 rounded space-y-2">
+          <span class="text-[10px] font-bold text-slate-700 block">Enter your scale (e.g. 1 cm = 100 m)</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-[10px] text-slate-600 mb-0.5">Map (cm)</label><input id="inputCustomScaleCm" type="number" step="0.1" min="0.1" value="1" class="w-full px-2 py-1 border border-slate-300 rounded text-xs font-mono"></div>
+            <div><label class="block text-[10px] text-slate-600 mb-0.5">Ground (m)</label><input id="inputCustomScaleM" type="number" step="1" min="1" value="100" class="w-full px-2 py-1 border border-slate-300 rounded text-xs font-mono"></div>
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Orientation</label>
+          <div class="flex gap-2">
+            <label class="flex items-center gap-1.5 p-1.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer flex-1">
+              <input type="radio" name="orientation" value="portrait" checked class="text-emerald-600"><span class="text-[11px] font-medium">Portrait</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-1.5 rounded border border-slate-200 hover:bg-slate-50 cursor-pointer flex-1">
+              <input type="radio" name="orientation" value="landscape" class="text-emerald-600"><span class="text-[11px] font-medium">Landscape</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3">Map Title & Administration</h2>
+      <div class="space-y-2.5 text-xs">
+        <div><label class="block font-medium text-slate-700 mb-0.5">Work Name / Treatment Type</label><input id="inputTreatmentTitle" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="e.g. Compartment Treatment Map"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block font-medium text-slate-700 mb-0.5">Forest Division</label><input id="inputDivision" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="e.g. Forest Division"></div>
+          <div><label class="block font-medium text-slate-700 mb-0.5">Sub Division</label><input id="inputSubDivision" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="e.g. Sub Division"></div>
+        </div>
+        <div class="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-lg space-y-2">
+          <span class="text-[11px] font-bold text-emerald-900 block">Details shown on map header:</span>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block text-emerald-950 text-[11px] mb-0.5">Range</label><input id="inputRange" type="text" class="w-full px-2 py-1 bg-white border border-emerald-300 rounded text-xs" placeholder="e.g. Range"></div>
+            <div><label class="block text-emerald-950 text-[11px] mb-0.5">Round</label><input id="inputRound" type="text" class="w-full px-2 py-1 bg-white border border-emerald-300 rounded text-xs" placeholder="e.g. Round"></div>
+            <div><label class="block text-emerald-950 text-[11px] mb-0.5">Beat</label><input id="inputBeat" type="text" class="w-full px-2 py-1 bg-white border border-emerald-300 rounded text-xs" placeholder="e.g. Beat"></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block font-medium text-slate-700 mb-0.5">Compartment No.</label><input id="inputComp" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="e.g. Comp. No."></div>
+          <div><label class="block font-medium text-slate-700 mb-0.5">Date</label><input id="inputMapDate" type="date" class="w-full px-2.5 py-1 border border-slate-300 rounded font-sans"></div>
+        </div>
+        <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+          <span class="text-[11px] font-bold text-slate-800 block">Area Details (Hectares):</span>
+          <div class="grid grid-cols-3 gap-2">
+            <div><label class="block text-slate-600 text-[10px] mb-0.5">Total Area</label><input id="inputTotalArea" type="text" class="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs font-semibold" placeholder="0.00"></div>
+            <div><label class="block text-emerald-800 text-[10px] mb-0.5">Treatment Area</label><input id="inputWorkArea" type="text" class="w-full px-2 py-1 bg-white border border-emerald-300 rounded text-xs font-semibold text-emerald-900" placeholder="0.00"></div>
+            <div><label class="block text-amber-800 text-[10px] mb-0.5">Non-Treatment Area</label><input id="inputNonWorkArea" type="text" class="w-full px-2 py-1 bg-white border border-amber-300 rounded text-xs font-semibold text-amber-900" placeholder="Nil"></div>
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-0.5">Treatment Work Type *</label>
+          <select id="selectTreatmentType" class="w-full px-2.5 py-1.5 border border-slate-300 rounded bg-white font-medium">
+            <option value="plantation">Plantation</option>
+            <option value="nirmulan" selected>Nirmulan / Weed Eradication</option>
+            <option value="smc">Soil & Moisture Conservation</option>
+            <option value="anr">ANR</option>
+            <option value="custom">Custom Work Type…</option>
+          </select>
+          <div id="customTreatmentWrap" class="hidden mt-1.5">
+            <input id="inputCustomTreatmentType" type="text" class="w-full px-2.5 py-1.5 border border-emerald-300 rounded bg-emerald-50/40 text-xs font-medium" placeholder="Type custom work / treatment">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3">Legend</h2>
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Legend Position (drag on map to fine-tune):</label>
+          <select id="selectLegendPos" class="w-full px-2 py-1 border border-slate-300 rounded bg-white text-xs">
+            <option value="top_right" selected>Top Right</option>
+            <option value="top_left">Top Left</option>
+            <option value="bottom_right">Bottom Right</option>
+          </select>
+        </div>
+        <button id="btnResetLegend" class="text-[10px] text-slate-500 underline">Reset legend to default position</button>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-indigo-200 p-4 bg-indigo-50/20">
+      <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wider border-b border-indigo-100 pb-2 mb-3 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span data-i18n="legend_features">Legend & Features</span>
+      </h2>
+      <div id="legendFeatureList" class="space-y-1.5 text-xs max-h-72 overflow-y-auto custom-scrollbar pr-1"></div>
+      <div class="mt-3 pt-3 border-t border-indigo-100 space-y-2">
+        <span class="text-[11px] font-bold text-indigo-900" data-i18n="custom_feature">Add custom feature</span>
+        <input id="inputCustomFeatureName" type="text" class="w-full px-2 py-1 border border-indigo-300 rounded text-xs" data-i18n-placeholder="feature_name" placeholder="e.g. Watch Tower">
+        <div class="flex gap-1.5">
+          <select id="selectCustomFeatureSymbol" class="flex-1 px-2 py-1 border border-indigo-300 rounded bg-white text-xs">
+            <option value="road">Road</option>
+            <option value="house">House</option>
+            <option value="private_land">Private Land</option>
+            <option value="well">Well</option>
+            <option value="borewell">Borewell</option>
+            <option value="pond">Pond</option>
+            <option value="water_hole">Water Hole</option>
+            <option value="nala">Nala / Stream</option>
+            <option value="temple">Temple</option>
+            <option value="school">School</option>
+            <option value="tower">Tower</option>
+            <option value="custom" selected>Custom Symbol</option>
+          </select>
+          <input id="inputCustomFeatureColor" type="color" value="#0f172a" class="w-8 h-8 border border-indigo-300 rounded cursor-pointer">
+          <button id="btnAddCustomFeature" class="px-2.5 py-1 bg-indigo-700 hover:bg-indigo-800 text-white rounded text-[11px] font-bold" data-i18n="add_feature">Add</button>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-2 mt-2 border-t border-indigo-100 gap-2">
+        <button id="btnClearFeatureMarkers" class="text-[11px] text-rose-600 hover:text-rose-800 underline font-medium" data-i18n="clear_markers">Clear placed symbols</button>
+        <button id="btnCancelPlaceMode" class="text-[11px] text-indigo-700 hover:text-indigo-900 underline font-medium hidden" data-i18n="cancel_place">Cancel placing</button>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-violet-300 p-4 bg-violet-50/20">
+      <h2 class="text-xs font-bold text-violet-900 uppercase tracking-wider border-b border-violet-100 pb-2 mb-3 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+        <span data-i18n="map_styling">Map Text Styling</span>
+      </h2>
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Font Size</label>
+          <select id="selectFontSize" class="w-full px-2 py-1.5 border border-slate-300 rounded bg-white">
+            <option value="small">Small</option>
+            <option value="medium" selected>Medium (Default)</option>
+            <option value="large">Large</option>
+            <option value="xlarge">Extra Large</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Text Colour</label>
+          <input id="inputTextColor" type="color" value="#065f46" class="w-full h-8 border border-slate-300 rounded cursor-pointer">
+        </div>
+        <div>
+          <label class="block font-medium text-slate-700 mb-1">Font Family</label>
+          <select id="selectFontFamily" class="w-full px-2 py-1.5 border border-slate-300 rounded bg-white">
+            <option value="'Noto Sans Devanagari', sans-serif" selected>Noto Sans (Auto by language)</option>
+            <option value="'Noto Sans Bengali', sans-serif">Noto Sans Bengali</option>
+            <option value="'Noto Sans Tamil', sans-serif">Noto Sans Tamil</option>
+            <option value="'Noto Sans Telugu', sans-serif">Noto Sans Telugu</option>
+            <option value="'Noto Sans Gujarati', sans-serif">Noto Sans Gujarati</option>
+            <option value="'Noto Sans Kannada', sans-serif">Noto Sans Kannada</option>
+            <option value="'Noto Sans Malayalam', sans-serif">Noto Sans Malayalam</option>
+            <option value="'Noto Sans Gurmukhi', sans-serif">Noto Sans Gurmukhi</option>
+            <option value="'Noto Sans Oriya', sans-serif">Noto Sans Oriya</option>
+            <option value="'Noto Naskh Arabic', serif">Noto Naskh Arabic</option>
+            <option value="'Noto Sans Ol Chiki', sans-serif">Noto Sans Ol Chiki</option>
+            <option value="'Inter', sans-serif">Inter</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-sky-300 p-4 bg-sky-50/20">
+      <h2 class="text-xs font-bold text-sky-900 uppercase tracking-wider border-b border-sky-100 pb-2 mb-3 flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-sky-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        <span data-i18n="display_options">Map Display Options (Yes / No)</span>
+      </h2>
+      <div id="displayOptions" class="space-y-2 text-xs"></div>
+      <div class="flex items-center justify-between pt-2 mt-2 border-t border-sky-100 gap-2">
+        <button id="btnResetTransform" class="text-[11px] text-sky-800 hover:text-sky-950 underline font-medium" data-i18n="reset_transform">Reset Drag / Rotation</button>
+        <span id="transformInfo" class="text-[10px] font-mono text-slate-500 whitespace-nowrap">Δ 0.00, 0.00 cm · 0°</span>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3">Official Signatures</h2>
+      <div class="space-y-2.5 text-xs">
+        <div><label class="block font-bold text-slate-800 mb-0.5">1. Forest Guard</label><input id="inputVanrakshak" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="Name & Signature"></div>
+        <div><label class="block font-bold text-slate-800 mb-0.5">2. Forest Beat Officer</label><input id="inputVanpal" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="Name & Signature"></div>
+        <div><label class="block font-bold text-slate-800 mb-0.5">3. Range Forest Officer</label><input id="inputRFO" type="text" class="w-full px-2.5 py-1.5 border border-slate-300 rounded" placeholder="Name & Signature"></div>
+      </div>
+    </section>
+  </aside>
+
+  <section class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
+    <div class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 mb-3 gap-2 text-xs">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-900">Treatment Map Workspace</span>
+        <span id="badgeScale" class="bg-emerald-100 text-emerald-800 font-mono px-2 py-0.5 rounded text-[11px] font-bold">Scale: 2 cm = 100 m</span>
+        <span id="badgePaper" class="bg-sky-100 text-sky-800 font-mono px-2 py-0.5 rounded text-[11px] font-bold">PDF: A4</span>
+        <span id="badgeKMLStatus" class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]">Live Map</span>
+      </div>
+      <div class="flex items-center gap-2 text-slate-500 text-[11px]">
+        <span id="canvasDimLabel">Standard A4 Graph Paper (1600 × 2320 px - HD)</span>
+        <span class="hidden sm:inline text-sky-700 font-semibold" data-i18n="drag_hint">Drag to move · Shift + Drag to rotate</span>
+      </div>
+    </div>
+
+    <div id="accuracyPanel" class="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3 text-xs">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-bold text-amber-900 flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Map Accuracy Tracker
+        </span>
+        <span id="accuracyBadge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">Not checked</span>
+      </div>
+      <div id="accuracyResults" class="space-y-1 text-[11px] text-slate-700">
+        <div class="text-slate-400 italic">Load a map to run checks.</div>
+      </div>
+      <button id="btnRunAccuracy" class="mt-2 w-full py-1 bg-amber-700 hover:bg-amber-800 text-white rounded text-[11px] font-bold transition">Run Accuracy Check</button>
+    </div>
+
+    <div class="flex-1 overflow-auto custom-scrollbar bg-slate-200 rounded-lg p-3 sm:p-4 flex justify-center items-start min-h-[620px]">
+      <div class="bg-white shadow-2xl rounded-sm p-1.5">
+        <canvas id="mapCanvas" width="1600" height="2320" class="border border-slate-400 cursor-grab bg-white select-none" style="width: 800px; height: 1160px; touch-action: none;"></canvas>
+      </div>
+    </div>
+    <div class="mt-3 text-xs text-slate-600 flex flex-wrap items-center justify-between gap-3 px-2 pt-2 border-t border-slate-100">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-slate-700">Location / Grid:</span>
+        <span id="coordDisplay" class="font-mono text-emerald-800 font-semibold bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">Hover or click on map...</span>
+      </div>
+      <div class="text-[11px] text-slate-500">Signatures: Forest Guard • Beat Officer • RFO</div>
+    </div>
+  </section>
+</main>
+
+<div id="guidelinesModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+    <div class="flex items-center justify-between p-4 border-b border-slate-200">
+      <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Treatment Map Preparation Guidelines
+      </h3>
+      <button id="btnCloseGuidelines" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+    </div>
+    <div id="guidelinesContent" class="overflow-y-auto custom-scrollbar p-5 text-xs text-slate-700 space-y-4"></div>
+    <div class="p-3 border-t border-slate-200 flex justify-end">
+      <button id="btnCloseGuidelines2" class="px-4 py-1.5 bg-emerald-700 text-white rounded text-xs font-bold">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-medium flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+  <span id="toastMsg">Action completed</span>
+</div>
+
+<div id="shareModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-5 space-y-4">
+    <div class="flex items-center justify-between border-b pb-2">
+      <h3 class="text-sm font-bold text-slate-900">Share Treatment Map on WhatsApp</h3>
+      <button id="btnCloseShareModal" class="text-slate-400 hover:text-slate-600 text-lg leading-none">&times;</button>
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded p-3 text-xs space-y-1 font-mono text-slate-700">
+      <div id="shareSummaryText">Treatment map details</div>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-2 pt-2">
+      <button id="btnDownloadAndWhatsApp" class="flex-1 py-2 px-3 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition">Open WhatsApp & Attach PDF</button>
+      <button id="btnDirectPDFSave" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-semibold">Download PDF Only</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ ERROR BANNER (dev) ============
+window.addEventListener('error', e => {
+  const b = document.createElement('div');
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:8px 12px;z-index:99999;font:12px monospace;white-space:pre-wrap';
+  b.textContent = '❌ ' + e.message + ' @ line ' + e.lineno;
+  document.body.prepend(b);
+});
+
+// ============ LANGUAGE-AWARE FONT ============
+const LANG_FONTS = {
+  en: "'Inter', sans-serif",
+  hi: "'Noto Sans Devanagari', sans-serif",
+  mr: "'Noto Sans Devanagari', sans-serif",
+  sa: "'Noto Sans Devanagari', sans-serif",
+  kok: "'Noto Sans Devanagari', sans-serif",
+  mai: "'Noto Sans Devanagari', sans-serif",
+  doi: "'Noto Sans Devanagari', sans-serif",
+  brx: "'Noto Sans Devanagari', sans-serif",
+  ne: "'Noto Sans Devanagari', sans-serif",
+  bn: "'Noto Sans Bengali', sans-serif",
+  as: "'Noto Sans Bengali', sans-serif",
+  mni: "'Noto Sans Bengali', sans-serif",
+  ta: "'Noto Sans Tamil', sans-serif",
+  te: "'Noto Sans Telugu', sans-serif",
+  gu: "'Noto Sans Gujarati', sans-serif",
+  kn: "'Noto Sans Kannada', sans-serif",
+  ml: "'Noto Sans Malayalam', sans-serif",
+  pa: "'Noto Sans Gurmukhi', sans-serif",
+  or: "'Noto Sans Oriya', sans-serif",
+  ur: "'Noto Naskh Arabic', serif",
+  ks: "'Noto Naskh Arabic', serif",
+  sd: "'Noto Naskh Arabic', serif",
+  sat: "'Noto Sans Ol Chiki', sans-serif"
+};
+function getFontForLang(lang) { return LANG_FONTS[lang] || LANG_FONTS.en; }
+
+// ============ I18N — 22 SCHEDULED LANGUAGES + ENGLISH ============
+// Note: missing keys fall back to English automatically so no label goes blank.
+const i18n = {
+  en: {
+    import_title:'KML / KMZ / GPX File Import', working_area:'1. Working Area', non_working_area:'2. Non-Working Area',
+    select_working_file:'Select Working Area File', select_non_working_file:'Select Non-Working Area File',
+    gps_find:'Find Current Grid Location (GPS)', gps_finding:'Finding GPS signal...', gps_stop:'Stop GPS tracking',
+    gps_not_available:'GPS not available.', gps_permission:'Please grant location permission.',
+    gps_no_signal:'GPS signal unavailable.', gps_timeout:'GPS timed out.',
+    gps_inside:'You are in grid {grid}.', gps_outside:'You are outside the treatment area.',
+    gps_wait:'Waiting for GPS signal...', pdf_scale:'Scale', pdf_nil:'Nil',
+    legend_non_working:'Non-Working Area', legend_boundary:'Boundary', legend_baseline:'Base Line',
+    legend_grid:'Grid Lines', legend:'Legend',
+    range:'Range', round:'Round', beat:'Beat', compartment_no:'Compartment No.',
+    division:'Division', sub_division:'Sub-Division', total_area:'Total Area', work_area:'Treatment Area',
+    non_work_area:'Non-Treatment Area', date:'Date', pdf_header:'Treatment Map (Grid Base Map)',
+    pdf_subheader:'Treatment Map', pdf_area_ha:'Ha', pdf_grid_name:'Grid',
+    start_point:'START POINT P-1', end_point:'END POINT P-2',
+    canvas_empty_prompt:'Please select a Working Area KML/KMZ file',
+    canvas_empty_hint:'or click "Load Sample Map" for a quick preview.',
+    toast_success:'Success', toast_pdf_download:'PDF downloaded.', toast_pdf_error:'PDF error: ',
+    toast_area_loaded:'Working area loaded: {area} Ha', toast_non_work_loaded:'Non-working area loaded: {area} Ha',
+    toast_nil_set:'Non-working area set to Nil.', toast_rotation:'Baseline aligned at {angle}°.',
+    toast_scale_changed:'Scale: {scale}', toast_location_set:'Location set to grid {grid}.',
+    toast_please_load_map:'Please load a map first.', toast_please_upload_kml:'Please import a working area KML first.',
+    toast_error_parse:'File contains no valid boundary points.',
+    clear_data_toast:'All entries cleared.', load_demo_toast:'Sample map loaded.', clear_map_toast:'Map cleared.',
+    error_loading:'Error', plantation:'Plantation', nirmulan:'Nirmulan / Weed Eradication',
+    smc:'Soil & Moisture Conservation', anr:'ANR', north_arrow:'N',
+    forest_guard:'Forest Guard', forest_beat_officer:'Beat Officer', rfo:'RFO',
+    not_selected:'Not selected',
+    display_options:'Map Display Options (Yes / No)',
+    opt_baseline:'Add Baseline on Map', opt_baseline_meas:'Measurements on Baseline',
+    opt_grid_naming:'Grid Column Labels (A, B, C… / L1, R1)',
+    opt_grid_numbers:'Grid Cell Numbers (1, 2, 3…)',
+    opt_grid_lines:'Blue Grid Lines', yes:'Yes', no:'No',
+    drag_hint:'Drag to move · Shift + Drag to rotate',
+    reset_transform:'Reset Drag / Rotation',
+    map_styling:'Map Text Styling', legend_features:'Legend & Features',
+    feature_road:'Road', feature_house:'House', feature_private_land:'Private Land',
+    feature_well:'Well', feature_borewell:'Borewell', feature_pond:'Pond',
+    feature_water_hole:'Water Hole', feature_nala:'Nala / Stream', feature_temple:'Temple',
+    feature_school:'School', feature_tower:'Tower',
+    place:'Place', cancel_place:'Cancel placing', custom_feature:'Add custom feature',
+    feature_name:'Feature name', add_feature:'Add', clear_markers:'Clear placed symbols',
+    click_to_place:'Click on the map to place: {name}', placement_cancelled:'Placement cancelled.',
+    custom_added:'Custom feature added to legend.', markers_cleared:'Placed symbols cleared.',
+    enter_feature_name:'Enter a feature name.', pdf_paper:'PDF Paper'
+  },
+  hi: {
+    import_title:'KML / KMZ / GPX फ़ाइल आयात', working_area:'1. कार्य क्षेत्र', non_working_area:'2. गैर-कार्य क्षेत्र',
+    select_working_file:'कार्य क्षेत्र फ़ाइल चुनें', select_non_working_file:'गैर-कार्य क्षेत्र फ़ाइल चुनें',
+    gps_find:'वर्तमान ग्रिड स्थान खोजें (GPS)', gps_finding:'GPS सिग्नल खोज रहे हैं...', gps_stop:'GPS बंद करें',
+    gps_not_available:'GPS उपलब्ध नहीं.', gps_permission:'कृपया स्थान अनुमति दें.',
+    gps_no_signal:'GPS सिग्नल उपलब्ध नहीं.', gps_timeout:'GPS समय समाप्त.',
+    gps_inside:'आप {grid} ग्रिड में हैं.', gps_outside:'आप उपचार क्षेत्र के बाहर हैं.',
+    gps_wait:'GPS सिग्नल की प्रतीक्षा...', pdf_scale:'पैमाना', pdf_nil:'शून्य',
+    legend_non_working:'गैर-कार्य क्षेत्र', legend_boundary:'सीमा', legend_baseline:'बेस लाइन',
+    legend_grid:'ग्रिड', legend:'संकेत',
+    range:'वन परिक्षेत्र', round:'परिमंडल', beat:'बीट', compartment_no:'कम्पार्टमेंट नं.',
+    division:'वन प्रभाग', sub_division:'उप प्रभाग', total_area:'कुल क्षेत्र', work_area:'उपचार क्षेत्र',
+    non_work_area:'गैर-उपचार क्षेत्र', date:'दिनांक', pdf_header:'उपचार नक्शा (ग्रिड बेस मैप सहित)',
+    pdf_subheader:'उपचार नक्शा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'प्रारंभ बिंदु P-1', end_point:'अंतिम बिंदु P-2',
+    canvas_empty_prompt:'कृपया कार्य क्षेत्र KML/KMZ फ़ाइल चुनें',
+    canvas_empty_hint:'या "नमूना नक्शा लोड करें" पर क्लिक करें.',
+    toast_success:'सफल', toast_pdf_download:'PDF डाउनलोड हो गई.', toast_pdf_error:'PDF त्रुटि: ',
+    toast_area_loaded:'कार्य क्षेत्र लोड: {area} हे.', toast_non_work_loaded:'गैर-कार्य क्षेत्र लोड: {area} हे.',
+    toast_nil_set:'गैर-कार्य क्षेत्र शून्य किया.', toast_rotation:'बेसलाइन {angle}° पर संरेखित.',
+    toast_scale_changed:'पैमाना: {scale}', toast_location_set:'ग्रिड {grid} पर स्थान.',
+    toast_please_load_map:'पहले नक्शा लोड करें.', toast_please_upload_kml:'पहले कार्य क्षेत्र KML अपलोड करें.',
+    toast_error_parse:'वैध सीमा बिंदु नहीं मिले.',
+    clear_data_toast:'सभी प्रविष्टियां साफ़.', load_demo_toast:'नमूना नक्शा लोड.', clear_map_toast:'नक्शा खाली.',
+    error_loading:'त्रुटि', plantation:'वृक्षारोपण', nirmulan:'निर्मूलन / खरपतवार नियंत्रण',
+    smc:'मृदा और जल संरक्षण', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षक', forest_beat_officer:'वनपाल', rfo:'वनपरिक्षेत्र अधिकारी',
+    not_selected:'चयनित नहीं',
+    display_options:'नक्शा प्रदर्शन विकल्प (हाँ / नहीं)',
+    opt_baseline:'नक्शे पर बेस लाइन दिखाएँ', opt_baseline_meas:'बेस लाइन पर माप लिखें',
+    opt_grid_naming:'ग्रिड कॉलम लेबल (A, B, C… / L1, R1)',
+    opt_grid_numbers:'ग्रिड सेल संख्या (1, 2, 3…)',
+    opt_grid_lines:'नीली ग्रिड रेखाएँ', yes:'हाँ', no:'नहीं',
+    drag_hint:'खिसकाने के लिए ड्रैग करें · घुमाने के लिए Shift + ड्रैग',
+    reset_transform:'ड्रैग / रोटेशन रीसेट करें',
+    map_styling:'नक्शा टेक्स्ट स्टाइलिंग', legend_features:'संकेत और विशेषताएँ',
+    feature_road:'सड़क', feature_house:'घर', feature_private_land:'निजी भूमि',
+    feature_well:'कुआँ', feature_borewell:'बोरवेल', feature_pond:'तालाब',
+    feature_water_hole:'पानी का गड्ढा', feature_nala:'नाला / धारा', feature_temple:'मंदिर',
+    feature_school:'स्कूल', feature_tower:'मीनार',
+    place:'रखें', cancel_place:'रखना रद्द करें', custom_feature:'अपनी विशेषता जोड़ें',
+    feature_name:'विशेषता का नाम', add_feature:'जोड़ें', clear_markers:'रखे चिह्न साफ़ करें',
+    click_to_place:'नक्शे पर क्लिक करें: {name}', placement_cancelled:'रखना रद्द हुआ.',
+    custom_added:'अपनी विशेषता संकेत में जोड़ी.', markers_cleared:'रखे चिह्न साफ़ किए.',
+    enter_feature_name:'विशेषता का नाम दर्ज करें.', pdf_paper:'PDF कागज़'
+  },
+  mr: {
+    import_title:'KML / KMZ / GPX फाईल इम्पोर्ट', working_area:'१. उपचार क्षेत्र', non_working_area:'२. अनुपचार क्षेत्र',
+    select_working_file:'उपचार क्षेत्र फाईल निवडा', select_non_working_file:'अनुपचार क्षेत्र फाईल निवडा',
+    gps_find:'सध्याचे ग्रीड स्थान शोधा (GPS)', gps_finding:'GPS सिग्नल शोधत आहे...', gps_stop:'GPS बंद करा',
+    gps_not_available:'GPS उपलब्ध नाही.', gps_permission:'कृपया स्थान परवानगी द्या.',
+    gps_no_signal:'GPS सिग्नल उपलब्ध नाही.', gps_timeout:'GPS वेळ संपला.',
+    gps_inside:'तुम्ही {grid} ग्रीड मध्ये आहात.', gps_outside:'तुम्ही उपचार क्षेत्राच्या बाहेर आहात.',
+    gps_wait:'GPS सिग्नल शोधत आहे...', pdf_scale:'प्रमाण', pdf_nil:'निरंक',
+    legend_non_working:'अनुपचार क्षेत्र', legend_boundary:'हद्द', legend_baseline:'बेस लाईन',
+    legend_grid:'ग्रीड', legend:'सूची',
+    range:'वनपरिक्षेत्र', round:'परिमंडळ', beat:'नियतक्षेत्र', compartment_no:'कक्ष क्रमांक',
+    division:'वनविभाग', sub_division:'उपविभाग', total_area:'एकूण क्षेत्र', work_area:'उपचार क्षेत्र',
+    non_work_area:'अनुपचार क्षेत्र', date:'दिनांक', pdf_header:'उपचार नकाशा (ग्रीड बेस मॅपसह)',
+    pdf_subheader:'उपचार नकाशा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रीड',
+    start_point:'प्रारंभ बिंदू P-1', end_point:'अंतिम बिंदू P-2',
+    canvas_empty_prompt:'कृपया उपचार क्षेत्र KML/KMZ फाईल निवडा',
+    canvas_empty_hint:'किंवा "नमुना नकाशा लोड करा" वर क्लिक करा.',
+    toast_success:'यशस्वी', toast_pdf_download:'PDF डाऊनलोड झाली.', toast_pdf_error:'PDF त्रुटी: ',
+    toast_area_loaded:'उपचार क्षेत्र लोड: {area} हे.', toast_non_work_loaded:'अनुपचार क्षेत्र लोड: {area} हे.',
+    toast_nil_set:'अनुपचार क्षेत्र निरंक केले.', toast_rotation:'बेस लाईन {angle}° ला जुळवली.',
+    toast_scale_changed:'प्रमाण: {scale}', toast_location_set:'ग्रीड {grid} वर स्थान निश्चित.',
+    toast_please_load_map:'प्रथम नकाशा लोड करा.', toast_please_upload_kml:'प्रथम उपचार क्षेत्र KML अपलोड करा.',
+    toast_error_parse:'वैध सीमाबिंदू सापडले नाहीत.',
+    clear_data_toast:'सर्व नोंदी पुसल्या.', load_demo_toast:'नमुना नकाशा लोड झाला.', clear_map_toast:'नकाशा रिकामा केला.',
+    error_loading:'त्रुटी', plantation:'वृक्षारोपण', nirmulan:'निर्मूलन / तण नियंत्रण',
+    smc:'मृदा व जल संधारण', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षक', forest_beat_officer:'वनपाल', rfo:'वनपरिक्षेत्र अधिकारी',
+    not_selected:'निवडलेली नाही',
+    display_options:'नकाशा प्रदर्शन पर्याय (होय / नाही)',
+    opt_baseline:'नकाशावर बेस लाईन दाखवायची', opt_baseline_meas:'बेस लाईनवर मोजमाप लिहायचे',
+    opt_grid_naming:'ग्रीड स्तंभ लेबल (A, B, C… / L1, R1)',
+    opt_grid_numbers:'ग्रीड सेल क्रमांक (१, २, ३…)',
+    opt_grid_lines:'निळ्या ग्रीड रेषा', yes:'होय', no:'नाही',
+    drag_hint:'हलवण्यासाठी ड्रॅग करा · फिरवण्यासाठी Shift + ड्रॅग',
+    reset_transform:'ड्रॅग / फिरवणे रीसेट करा',
+    map_styling:'नकाशा मजकूर शैली', legend_features:'सूची व वैशिष्ट्ये',
+    feature_road:'रस्ता', feature_house:'घर', feature_private_land:'खाजगी जमीन',
+    feature_well:'विहीर', feature_borewell:'बोअरवेल', feature_pond:'तलाव',
+    feature_water_hole:'पाण्याचा खड्डा', feature_nala:'नाला / ओढा', feature_temple:'मंदिर',
+    feature_school:'शाळा', feature_tower:'मनोरा',
+    place:'ठेवा', cancel_place:'ठेवणे रद्द करा', custom_feature:'स्वतःचे वैशिष्ट्य जोडा',
+    feature_name:'वैशिष्ट्याचे नाव', add_feature:'जोडा', clear_markers:'ठेवलेली चिन्हे पुसा',
+    click_to_place:'नकाशावर क्लिक करा: {name}', placement_cancelled:'ठेवणे रद्द झाले.',
+    custom_added:'स्वतःचे वैशिष्ट्य सूचीत जोडले.', markers_cleared:'ठेवलेली चिन्हे पुसली.',
+    enter_feature_name:'वैशिष्ट्याचे नाव टाका.', pdf_paper:'PDF कागद'
+  },
+  bn: {
+    import_title:'KML / KMZ / GPX ফাইল আমদানি', working_area:'১. কার্য এলাকা', non_working_area:'২. অ-কার্য এলাকা',
+    select_working_file:'কার্য এলাকা ফাইল নির্বাচন', select_non_working_file:'অ-কার্য এলাকা ফাইল নির্বাচন',
+    gps_find:'বর্তমান গ্রিড অবস্থান খুঁজুন (GPS)', gps_finding:'GPS সংকেত খোঁজা হচ্ছে...', gps_stop:'GPS বন্ধ করুন',
+    gps_inside:'আপনি {grid} গ্রিডে আছেন.', gps_outside:'আপনি চিকিৎসা এলাকার বাইরে.',
+    pdf_scale:'স্কেল', pdf_nil:'শূন্য', legend_non_working:'অ-কার্য এলাকা', legend_boundary:'সীমানা',
+    legend_baseline:'বেস লাইন', legend_grid:'গ্রিড', legend:'কিংবদন্তি',
+    range:'রেঞ্জ', round:'রাউন্ড', beat:'বিট', compartment_no:'কম্পার্টমেন্ট নং',
+    division:'বিভাগ', sub_division:'উপবিভাগ', total_area:'মোট এলাকা', work_area:'চিকিৎসা এলাকা',
+    non_work_area:'অ-চিকিৎসা এলাকা', date:'তারিখ', pdf_header:'চিকিৎসা মানচিত্র (গ্রিড বেস ম্যাপ)',
+    pdf_subheader:'চিকিৎসা মানচিত্র', pdf_area_ha:'হে.', pdf_grid_name:'গ্রিড',
+    start_point:'শুরুর বিন্দু P-1', end_point:'শেষ বিন্দু P-2',
+    canvas_empty_prompt:'অনুগ্রহ করে কার্য এলাকা KML/KMZ ফাইল নির্বাচন করুন',
+    canvas_empty_hint:'অথবা "নমুনা মানচিত্র লোড করুন" ক্লিক করুন.',
+    toast_success:'সফল', error_loading:'ত্রুটি',
+    plantation:'বাগান', nirmulan:'নির্মূলন / আগাছা দমন', smc:'মাটি ও জল সংরক্ষণ', anr:'ANR', north_arrow:'N',
+    forest_guard:'বনরক্ষী', forest_beat_officer:'বনপাল', rfo:'রেঞ্জ ফরেস্ট অফিসার',
+    not_selected:'নির্বাচিত নয়', yes:'হ্যাঁ', no:'না', pdf_paper:'PDF কাগজ'
+  },
+  ta: {
+    import_title:'KML / KMZ / GPX கோப்பு இறக்குமதி', working_area:'1. வேலை பகுதி', non_working_area:'2. வேலை இல்லாத பகுதி',
+    select_working_file:'வேலை பகுதி கோப்பைத் தேர்ந்தெடு', select_non_working_file:'வேலை இல்லாத பகுதி கோப்பைத் தேர்ந்தெடு',
+    gps_find:'தற்போதைய கட்டம் இருப்பிடத்தைக் கண்டறி (GPS)', gps_finding:'GPS சமிக்ஞை தேடப்படுகிறது...', gps_stop:'GPS நிறுத்து',
+    gps_inside:'நீங்கள் {grid} கட்டத்தில் உள்ளீர்கள்.', gps_outside:'நீங்கள் சிகிச்சை பகுதிக்கு வெளியே உள்ளீர்கள்.',
+    pdf_scale:'அளவுகோல்', pdf_nil:'பூஜ்ஜியம்', legend_non_working:'வேலை இல்லாத பகுதி', legend_boundary:'எல்லை',
+    legend_baseline:'அடிப்படை கோடு', legend_grid:'கட்டம்', legend:'புராணம்',
+    range:'வரம்பு', round:'சுற்று', beat:'பீட்', compartment_no:'பெட்டி எண்',
+    division:'பிரிவு', sub_division:'துணைப்பிரிவு', total_area:'மொத்த பரப்பளவு', work_area:'சிகிச்சை பரப்பளவு',
+    non_work_area:'சிகிச்சை அல்லாத பரப்பளவு', date:'தேதி', pdf_header:'சிகிச்சை வரைபடம் (கட்டம் அடிப்படை வரைபடம்)',
+    pdf_subheader:'சிகிச்சை வரைபடம்', pdf_area_ha:'ஹெக்.', pdf_grid_name:'கட்டம்',
+    start_point:'தொடக்க புள்ளி P-1', end_point:'இறுதி புள்ளி P-2',
+    canvas_empty_prompt:'தயவுசெய்து வேலை பகுதி KML/KMZ கோப்பைத் தேர்ந்தெடுக்கவும்',
+    canvas_empty_hint:'அல்லது "மாதிரி வரைபடம் ஏற்று" என்பதைக் கிளிக் செய்யவும்.',
+    toast_success:'வெற்றி', error_loading:'பிழை',
+    plantation:'தோட்டம்', nirmulan:'ஒழிப்பு / களை கட்டுப்பாடு', smc:'மண் மற்றும் நீர் பாதுகாப்பு', anr:'ANR', north_arrow:'N',
+    forest_guard:'வன காவலர்', forest_beat_officer:'வன பீட் அதிகாரி', rfo:'வன வட்ட அதிகாரி',
+    not_selected:'தேர்ந்தெடுக்கப்படவில்லை', yes:'ஆம்', no:'இல்லை', pdf_paper:'PDF காகிதம்'
+  },
+  te: {
+    import_title:'KML / KMZ / GPX ఫైల్ దిగుమతి', working_area:'1. పని ప్రాంతం', non_working_area:'2. పని కాని ప్రాంతం',
+    select_working_file:'పని ప్రాంత ఫైల్ ఎంచుకోండి', select_non_working_file:'పని కాని ప్రాంత ఫైల్ ఎంచుకోండి',
+    gps_find:'ప్రస్తుత గ్రిడ్ స్థానాన్ని కనుగొనండి (GPS)', gps_finding:'GPS సిగ్నల్ వెతుకుతోంది...', gps_stop:'GPS ఆపు',
+    gps_inside:'మీరు {grid} గ్రిడ్‌లో ఉన్నారు.', gps_outside:'మీరు చికిత్స ప్రాంతం వెలుపల ఉన్నారు.',
+    pdf_scale:'స్కేల్', pdf_nil:'సున్నా', legend_non_working:'పని కాని ప్రాంతం', legend_boundary:'సరిహద్దు',
+    legend_baseline:'బేస్ లైన్', legend_grid:'గ్రిడ్', legend:'పురాణం',
+    range:'రేంజ్', round:'రౌండ్', beat:'బీట్', compartment_no:'కంపార్ట్‌మెంట్ నం.',
+    division:'డివిజన్', sub_division:'సబ్ డివిజన్', total_area:'మొత్తం విస్తీర్ణం', work_area:'చికిత్స విస్తీర్ణం',
+    non_work_area:'చికిత్స కాని విస్తీర్ణం', date:'తేదీ', pdf_header:'చికిత్స మ్యాప్ (గ్రిడ్ బేస్ మ్యాప్)',
+    pdf_subheader:'చికిత్స మ్యాప్', pdf_area_ha:'హె.', pdf_grid_name:'గ్రిడ్',
+    start_point:'ప్రారంభ స్థానం P-1', end_point:'ముగింపు స్థానం P-2',
+    canvas_empty_prompt:'దయచేసి పని ప్రాంత KML/KMZ ఫైల్ ఎంచుకోండి',
+    canvas_empty_hint:'లేదా "నమూనా మ్యాప్ లోడ్" క్లిక్ చేయండి.',
+    toast_success:'విజయం', error_loading:'లోపం',
+    plantation:'తోట', nirmulan:'నిర్మూలన / కలుపు నియంత్రణ', smc:'నేల మరియు నీటి సంరక్షణ', anr:'ANR', north_arrow:'N',
+    forest_guard:'అటవీ కాపలాదారు', forest_beat_officer:'అటవీ బీట్ అధికారి', rfo:'రేంజ్ ఫారెస్ట్ ఆఫీసర్',
+    not_selected:'ఎంచుకోలేదు', yes:'అవును', no:'కాదు', pdf_paper:'PDF కాగితం'
+  },
+  gu: {
+    import_title:'KML / KMZ / GPX ફાઇલ આયાત', working_area:'1. કાર્ય વિસ્તાર', non_working_area:'2. બિન-કાર્ય વિસ્તાર',
+    select_working_file:'કાર્ય વિસ્તાર ફાઇલ પસંદ કરો', select_non_working_file:'બિન-કાર્ય વિસ્તાર ફાઇલ પસંદ કરો',
+    gps_find:'વર્તમાન ગ્રિડ સ્થાન શોધો (GPS)', gps_finding:'GPS સિગ્નલ શોધી રહ્યું છે...', gps_stop:'GPS બંધ કરો',
+    gps_inside:'તમે {grid} ગ્રિડમાં છો.', gps_outside:'તમે સારવાર વિસ્તારની બહાર છો.',
+    pdf_scale:'સ્કેલ', pdf_nil:'શૂન્ય', legend_non_working:'બિન-કાર્ય વિસ્તાર', legend_boundary:'સીમા',
+    legend_baseline:'બેઝ લાઇન', legend_grid:'ગ્રિડ', legend:'દંતકથા',
+    range:'રેન્જ', round:'રાઉન્ડ', beat:'બીટ', compartment_no:'કમ્પાર્ટમેન્ટ નં.',
+    division:'વિભાગ', sub_division:'પેટા વિભાગ', total_area:'કુલ વિસ્તાર', work_area:'સારવાર વિસ્તાર',
+    non_work_area:'બિન-સારવાર વિસ્તાર', date:'તારીખ', pdf_header:'સારવાર નકશો (ગ્રિડ બેઝ મેપ)',
+    pdf_subheader:'સારવાર નકશો', pdf_area_ha:'હે.', pdf_grid_name:'ગ્રિડ',
+    start_point:'શરૂઆત બિંદુ P-1', end_point:'અંતિમ બિંદુ P-2',
+    canvas_empty_prompt:'કૃપા કરીને કાર્ય વિસ્તાર KML/KMZ ફાઇલ પસંદ કરો',
+    canvas_empty_hint:'અથવા "નમૂનો નકશો લોડ કરો" પર ક્લિક કરો.',
+    toast_success:'સફળ', error_loading:'ભૂલ',
+    plantation:'વાવેતર', nirmulan:'નિર્મૂલન / નીંદણ નિયંત્રણ', smc:'જમીન અને પાણી સંરક્ષણ', anr:'ANR', north_arrow:'N',
+    forest_guard:'વનરક્ષક', forest_beat_officer:'વનપાલ', rfo:'રેન્જ ફોરેસ્ટ ઓફિસર',
+    not_selected:'પસંદ કરેલ નથી', yes:'હા', no:'ના', pdf_paper:'PDF કાગળ'
+  },
+  kn: {
+    import_title:'KML / KMZ / GPX ಫೈಲ್ ಆಮದು', working_area:'1. ಕೆಲಸದ ಪ್ರದೇಶ', non_working_area:'2. ಕೆಲಸವಲ್ಲದ ಪ್ರದೇಶ',
+    select_working_file:'ಕೆಲಸದ ಪ್ರದೇಶ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ', select_non_working_file:'ಕೆಲಸವಲ್ಲದ ಪ್ರದೇಶ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ',
+    gps_find:'ಪ್ರಸ್ತುತ ಗ್ರಿಡ್ ಸ್ಥಳ ಹುಡುಕಿ (GPS)', gps_finding:'GPS ಸಿಗ್ನಲ್ ಹುಡುಕುತ್ತಿದೆ...', gps_stop:'GPS ನಿಲ್ಲಿಸಿ',
+    gps_inside:'ನೀವು {grid} ಗ್ರಿಡ್‌ನಲ್ಲಿದ್ದೀರಿ.', gps_outside:'ನೀವು ಚಿಕಿತ್ಸೆ ಪ್ರದೇಶದ ಹೊರಗಿದ್ದೀರಿ.',
+    pdf_scale:'ಮಾಪಕ', pdf_nil:'ಶೂನ್ಯ', legend_non_working:'ಕೆಲಸವಲ್ಲದ ಪ್ರದೇಶ', legend_boundary:'ಗಡಿ',
+    legend_baseline:'ಮೂಲ ರೇಖೆ', legend_grid:'ಗ್ರಿಡ್', legend:'ಪುರಾಣ',
+    range:'ಶ್ರೇಣಿ', round:'ಸುತ್ತು', beat:'ಬೀಟ್', compartment_no:'ವಿಭಾಗ ಸಂಖ್ಯೆ',
+    division:'ವಿಭಾಗ', sub_division:'ಉಪ ವಿಭಾಗ', total_area:'ಒಟ್ಟು ಪ್ರದೇಶ', work_area:'ಚಿಕಿತ್ಸೆ ಪ್ರದೇಶ',
+    non_work_area:'ಚಿಕಿತ್ಸೆ ಅಲ್ಲದ ಪ್ರದೇಶ', date:'ದಿನಾಂಕ', pdf_header:'ಚಿಕಿತ್ಸೆ ನಕ್ಷೆ (ಗ್ರಿಡ್ ಬೇಸ್ ಮ್ಯಾಪ್)',
+    pdf_subheader:'ಚಿಕಿತ್ಸೆ ನಕ್ಷೆ', pdf_area_ha:'ಹೆ.', pdf_grid_name:'ಗ್ರಿಡ್',
+    start_point:'ಆರಂಭ ಬಿಂದು P-1', end_point:'ಅಂತ್ಯ ಬಿಂದು P-2',
+    canvas_empty_prompt:'ದಯವಿಟ್ಟು ಕೆಲಸದ ಪ್ರದೇಶ KML/KMZ ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ',
+    canvas_empty_hint:'ಅಥವಾ "ಮಾದರಿ ನಕ್ಷೆ ಲೋಡ್ ಮಾಡಿ" ಕ್ಲಿಕ್ ಮಾಡಿ.',
+    toast_success:'ಯಶಸ್ಸು', error_loading:'ದೋಷ',
+    plantation:'ತೋಟ', nirmulan:'ನಿರ್ಮೂಲನ / ಕಳೆ ನಿಯಂತ್ರಣ', smc:'ಮಣ್ಣು ಮತ್ತು ನೀರಿನ ಸಂರಕ್ಷಣೆ', anr:'ANR', north_arrow:'N',
+    forest_guard:'ಅರಣ್ಯ ಕಾವಲುಗಾರ', forest_beat_officer:'ಅರಣ್ಯ ಬೀಟ್ ಅಧಿಕಾರಿ', rfo:'ಶ್ರೇಣಿ ಅರಣ್ಯ ಅಧಿಕಾರಿ',
+    not_selected:'ಆಯ್ಕೆ ಮಾಡಿಲ್ಲ', yes:'ಹೌದು', no:'ಇಲ್ಲ', pdf_paper:'PDF ಕಾಗದ'
+  },
+  ml: {
+    import_title:'KML / KMZ / GPX ഫയൽ ഇറക്കുമതി', working_area:'1. പ്രവർത്തന പ്രദേശം', non_working_area:'2. പ്രവർത്തനമല്ലാത്ത പ്രദേശം',
+    select_working_file:'പ്രവർത്തന പ്രദേശ ഫയൽ തിരഞ്ഞെടുക്കുക', select_non_working_file:'പ്രവർത്തനമല്ലാത്ത പ്രദേശ ഫയൽ തിരഞ്ഞെടുക്കുക',
+    gps_find:'നിലവിലെ ഗ്രിഡ് സ്ഥാനം കണ്ടെത്തുക (GPS)', gps_finding:'GPS സിഗ്നൽ കണ്ടെത്തുന്നു...', gps_stop:'GPS നിർത്തുക',
+    gps_inside:'നിങ്ങൾ {grid} ഗ്രിഡിൽ ആണ്.', gps_outside:'നിങ്ങൾ ചികിത്സാ പ്രദേശത്തിന് പുറത്താണ്.',
+    pdf_scale:'സ്കെയിൽ', pdf_nil:'പൂജ്യം', legend_non_working:'പ്രവർത്തനമല്ലാത്ത പ്രദേശം', legend_boundary:'അതിർത്തി',
+    legend_baseline:'അടിസ്ഥാന രേഖ', legend_grid:'ഗ്രിഡ്', legend:'ഐതിഹ്യം',
+    range:'റേഞ്ച്', round:'റൗണ്ട്', beat:'ബീറ്റ്', compartment_no:'കമ്പാർട്ട്മെന്റ് നം.',
+    division:'ഡിവിഷൻ', sub_division:'സബ് ഡിവിഷൻ', total_area:'ആകെ വിസ്തീർണ്ണം', work_area:'ചികിത്സാ വിസ്തീർണ്ണം',
+    non_work_area:'ചികിത്സയല്ലാത്ത വിസ്തീർണ്ണം', date:'തീയതി', pdf_header:'ചികിത്സാ മാപ്പ് (ഗ്രിഡ് ബേസ് മാപ്പ്)',
+    pdf_subheader:'ചികിത്സാ മാപ്പ്', pdf_area_ha:'ഹെ.', pdf_grid_name:'ഗ്രിഡ്',
+    start_point:'ആരംഭ പോയിന്റ് P-1', end_point:'അവസാന പോയിന്റ് P-2',
+    canvas_empty_prompt:'ദയവായി പ്രവർത്തന പ്രദേശ KML/KMZ ഫയൽ തിരഞ്ഞെടുക്കുക',
+    canvas_empty_hint:'അല്ലെങ്കിൽ "സാമ്പിൾ മാപ്പ് ലോഡ് ചെയ്യുക" ക്ലിക്ക് ചെയ്യുക.',
+    toast_success:'വിജയം', error_loading:'പിശക്',
+    plantation:'തോട്ടം', nirmulan:'നിർമ്മാർജ്ജനം / കള നിയന്ത്രണം', smc:'മണ്ണ്, ജല സംരക്ഷണം', anr:'ANR', north_arrow:'N',
+    forest_guard:'വനപാലകൻ', forest_beat_officer:'ഫോറസ്റ്റ് ബീറ്റ് ഓഫീസർ', rfo:'റേഞ്ച് ഫോറസ്റ്റ് ഓഫീസർ',
+    not_selected:'തിരഞ്ഞെടുത്തിട്ടില്ല', yes:'അതെ', no:'ഇല്ല', pdf_paper:'PDF പേപ്പർ'
+  },
+  pa: {
+    import_title:'KML / KMZ / GPX ਫਾਈਲ ਆਯਾਤ', working_area:'1. ਕੰਮ ਵਾਲਾ ਖੇਤਰ', non_working_area:'2. ਗੈਰ-ਕੰਮ ਵਾਲਾ ਖੇਤਰ',
+    select_working_file:'ਕੰਮ ਵਾਲਾ ਖੇਤਰ ਫਾਈਲ ਚੁਣੋ', select_non_working_file:'ਗੈਰ-ਕੰਮ ਵਾਲਾ ਖੇਤਰ ਫਾਈਲ ਚੁਣੋ',
+    gps_find:'ਮੌਜੂਦਾ ਗਰਿੱਡ ਸਥਾਨ ਲੱਭੋ (GPS)', gps_finding:'GPS ਸਿਗਨਲ ਲੱਭ ਰਿਹਾ ਹੈ...', gps_stop:'GPS ਬੰਦ ਕਰੋ',
+    gps_inside:'ਤੁਸੀਂ {grid} ਗਰਿੱਡ ਵਿੱਚ ਹੋ.', gps_outside:'ਤੁਸੀਂ ਇਲਾਜ ਖੇਤਰ ਤੋਂ ਬਾਹਰ ਹੋ.',
+    pdf_scale:'ਪੈਮਾਨਾ', pdf_nil:'ਜ਼ੀਰੋ', legend_non_working:'ਗੈਰ-ਕੰਮ ਵਾਲਾ ਖੇਤਰ', legend_boundary:'ਸੀਮਾ',
+    legend_baseline:'ਬੇਸ ਲਾਈਨ', legend_grid:'ਗਰਿੱਡ', legend:'ਦੰਤਕਥਾ',
+    range:'ਰੇਂਜ', round:'ਰਾਊਂਡ', beat:'ਬੀਟ', compartment_no:'ਕੰਪਾਰਟਮੈਂਟ ਨੰ.',
+    division:'ਡਿਵੀਜ਼ਨ', sub_division:'ਸਬ ਡਿਵੀਜ਼ਨ', total_area:'ਕੁੱਲ ਖੇਤਰ', work_area:'ਇਲਾਜ ਖੇਤਰ',
+    non_work_area:'ਗੈਰ-ਇਲਾਜ ਖੇਤਰ', date:'ਤਾਰੀਖ', pdf_header:'ਇਲਾਜ ਨਕਸ਼ਾ (ਗਰਿੱਡ ਬੇਸ ਮੈਪ)',
+    pdf_subheader:'ਇਲਾਜ ਨਕਸ਼ਾ', pdf_area_ha:'ਹੈ.', pdf_grid_name:'ਗਰਿੱਡ',
+    start_point:'ਸ਼ੁਰੂ ਬਿੰਦੂ P-1', end_point:'ਅੰਤ ਬਿੰਦੂ P-2',
+    canvas_empty_prompt:'ਕਿਰਪਾ ਕਰਕੇ ਕੰਮ ਵਾਲਾ ਖੇਤਰ KML/KMZ ਫਾਈਲ ਚੁਣੋ',
+    canvas_empty_hint:'ਜਾਂ "ਨਮੂਨਾ ਨਕਸ਼ਾ ਲੋਡ ਕਰੋ" ਤੇ ਕਲਿੱਕ ਕਰੋ.',
+    toast_success:'ਸਫਲ', error_loading:'ਗਲਤੀ',
+    plantation:'ਬਾਗ', nirmulan:'ਨਿਰਮੂਲਨ / ਨਦੀਨ ਨਿਯੰਤਰਣ', smc:'ਮਿੱਟੀ ਅਤੇ ਪਾਣੀ ਸੰਭਾਲ', anr:'ANR', north_arrow:'N',
+    forest_guard:'ਵਨ ਰਾਖਾ', forest_beat_officer:'ਵਨ ਬੀਟ ਅਫਸਰ', rfo:'ਰੇਂਜ ਫਾਰੈਸਟ ਅਫਸਰ',
+    not_selected:'ਨਹੀਂ ਚੁਣਿਆ', yes:'ਹਾਂ', no:'ਨਹੀਂ', pdf_paper:'PDF ਕਾਗਜ਼'
+  },
+  or: {
+    import_title:'KML / KMZ / GPX ଫାଇଲ୍ ଆମଦାନୀ', working_area:'୧. କାର୍ଯ୍ୟ କ୍ଷେତ୍ର', non_working_area:'୨. ଅଣ-କାର୍ଯ୍ୟ କ୍ଷେତ୍ର',
+    select_working_file:'କାର୍ଯ୍ୟ କ୍ଷେତ୍ର ଫାଇଲ୍ ଚୟନ କରନ୍ତୁ', select_non_working_file:'ଅଣ-କାର୍ଯ୍ୟ କ୍ଷେତ୍ର ଫାଇଲ୍ ଚୟନ କରନ୍ତୁ',
+    gps_find:'ବର୍ତ୍ତମାନ ଗ୍ରିଡ୍ ସ୍ଥାନ ଖୋଜନ୍ତୁ (GPS)', gps_finding:'GPS ସଙ୍କେତ ଖୋଜୁଛି...', gps_stop:'GPS ବନ୍ଦ କରନ୍ତୁ',
+    gps_inside:'ଆପଣ {grid} ଗ୍ରିଡ୍‌ରେ ଅଛନ୍ତି.', gps_outside:'ଆପଣ ଚିକିତ୍ସା କ୍ଷେତ୍ର ବାହାରେ ଅଛନ୍ତି.',
+    pdf_scale:'ସ୍କେଲ୍', pdf_nil:'ଶୂନ୍ୟ', legend_non_working:'ଅଣ-କାର୍ଯ୍ୟ କ୍ଷେତ୍ର', legend_boundary:'ସୀମା',
+    legend_baseline:'ବେସ୍ ଲାଇନ୍', legend_grid:'ଗ୍ରିଡ୍', legend:'କିମ୍ବଦନ୍ତୀ',
+    range:'ରେଞ୍ଜ', round:'ରାଉଣ୍ଡ', beat:'ବିଟ୍', compartment_no:'କମ୍ପାର୍ଟମେଣ୍ଟ ନଂ.',
+    division:'ବିଭାଗ', sub_division:'ଉପ-ବିଭାଗ', total_area:'ମୋଟ କ୍ଷେତ୍ରଫଳ', work_area:'ଚିକିତ୍ସା କ୍ଷେତ୍ରଫଳ',
+    non_work_area:'ଅଣ-ଚିକିତ୍ସା କ୍ଷେତ୍ରଫଳ', date:'ତାରିଖ', pdf_header:'ଚିକିତ୍ସା ମ୍ୟାପ୍ (ଗ୍ରିଡ୍ ବେସ୍ ମ୍ୟାପ୍)',
+    pdf_subheader:'ଚିକିତ୍ସା ମ୍ୟାପ୍', pdf_area_ha:'ହେ.', pdf_grid_name:'ଗ୍ରିଡ୍',
+    start_point:'ଆରମ୍ଭ ବିନ୍ଦୁ P-1', end_point:'ଶେଷ ବିନ୍ଦୁ P-2',
+    canvas_empty_prompt:'ଦୟାକରି କାର୍ଯ୍ୟ କ୍ଷେତ୍ର KML/KMZ ଫାଇଲ୍ ଚୟନ କରନ୍ତୁ',
+    canvas_empty_hint:'କିମ୍ବା "ନମୁନା ମ୍ୟାପ୍ ଲୋଡ୍ କରନ୍ତୁ" କ୍ଲିକ୍ କରନ୍ତୁ.',
+    toast_success:'ସଫଳ', error_loading:'ତ୍ରୁଟି',
+    plantation:'ବଗିଚା', nirmulan:'ନିର୍ମୂଳନ / ଘାସ ନିୟନ୍ତ୍ରଣ', smc:'ମୃତ୍ତିକା ଓ ଜଳ ସଂରକ୍ଷଣ', anr:'ANR', north_arrow:'N',
+    forest_guard:'ବନରକ୍ଷୀ', forest_beat_officer:'ବନପାଲ', rfo:'ରେଞ୍ଜ ଫରେଷ୍ଟ ଅଫିସର',
+    not_selected:'ଚୟନିତ ନୁହେଁ', yes:'ହଁ', no:'ନା', pdf_paper:'PDF କାଗଜ'
+  },
+  as: {
+    import_title:'KML / KMZ / GPX ফাইল আমদানি', working_area:'১. কৰ্মক্ষেত্ৰ', non_working_area:'২. অ-কৰ্মক্ষেত্ৰ',
+    select_working_file:'কৰ্মক্ষেত্ৰ ফাইল বাছনি কৰক', select_non_working_file:'অ-কৰ্মক্ষেত্ৰ ফাইল বাছনি কৰক',
+    gps_find:'বৰ্তমান গ্ৰিড অৱস্থান বিচাৰক (GPS)', gps_finding:'GPS সংকেত বিচাৰি আছে...', gps_stop:'GPS বন্ধ কৰক',
+    gps_inside:'আপুনি {grid} গ্ৰিডত আছে.', gps_outside:'আপুনি চিকিৎসা এলেকাৰ বাহিৰত আছে.',
+    pdf_scale:'স্কেল', pdf_nil:'শূন্য', legend_non_working:'অ-কৰ্মক্ষেত্ৰ', legend_boundary:'সীমা',
+    legend_baseline:'বেছ লাইন', legend_grid:'গ্ৰিড', legend:'কিংবদন্তি',
+    range:'ৰেঞ্জ', round:'ৰাউণ্ড', beat:'বিট', compartment_no:'কম্পাৰ্টমেন্ট নং',
+    division:'বিভাগ', sub_division:'উপবিভাগ', total_area:'মুঠ এলেকা', work_area:'চিকিৎসা এলেকা',
+    non_work_area:'অ-চিকিৎসা এলেকা', date:'তাৰিখ', pdf_header:'চিকিৎসা মানচিত্ৰ (গ্ৰিড বেছ মেপ)',
+    pdf_subheader:'চিকিৎসা মানচিত্ৰ', pdf_area_ha:'হে.', pdf_grid_name:'গ্ৰিড',
+    start_point:'আৰম্ভ বিন্দু P-1', end_point:'শেষ বিন্দু P-2',
+    canvas_empty_prompt:'অনুগ্ৰহ কৰি কৰ্মক্ষেত্ৰ KML/KMZ ফাইল বাছনি কৰক',
+    canvas_empty_hint:'বা "নমুনা মেপ লোড কৰক" ক্লিক কৰক.',
+    toast_success:'সফল', error_loading:'ত্ৰুটি',
+    plantation:'বাগান', nirmulan:'নিৰ্মূলন / ঘাঁহ নিয়ন্ত্ৰণ', smc:'মাটি আৰু জল সংৰক্ষণ', anr:'ANR', north_arrow:'N',
+    forest_guard:'বনৰক্ষী', forest_beat_officer:'বনপাল', rfo:'ৰেঞ্জ ফৰেষ্ট অফিচাৰ',
+    not_selected:'বাছনি কৰা নহয়', yes:'হয়', no:'নহয়', pdf_paper:'PDF কাগজ'
+  },
+  ur: {
+    import_title:'KML / KMZ / GPX فائل درآمد', working_area:'1. کام کا علاقہ', non_working_area:'2. غیر کام کا علاقہ',
+    select_working_file:'کام کے علاقے کی فائل منتخب کریں', select_non_working_file:'غیر کام کے علاقے کی فائل منتخب کریں',
+    gps_find:'موجودہ گرڈ مقام تلاش کریں (GPS)', gps_finding:'GPS سگنل تلاش ہو رہا ہے...', gps_stop:'GPS بند کریں',
+    gps_inside:'آپ {grid} گرڈ میں ہیں.', gps_outside:'آپ علاج کے علاقے سے باہر ہیں.',
+    pdf_scale:'پیمانہ', pdf_nil:'صفر', legend_non_working:'غیر کام کا علاقہ', legend_boundary:'حدود',
+    legend_baseline:'بیس لائن', legend_grid:'گرڈ', legend:'علامات',
+    range:'رینج', round:'راؤنڈ', beat:'بیٹ', compartment_no:'کمپارٹمنٹ نمبر',
+    division:'ڈویژن', sub_division:'ذیلی ڈویژن', total_area:'کل رقبہ', work_area:'علاج کا رقبہ',
+    non_work_area:'غیر علاج کا رقبہ', date:'تاریخ', pdf_header:'علاج کا نقشہ (گرڈ بیس میپ)',
+    pdf_subheader:'علاج کا نقشہ', pdf_area_ha:'ہیکٹر', pdf_grid_name:'گرڈ',
+    start_point:'آغاز نقطہ P-1', end_point:'اختتام نقطہ P-2',
+    canvas_empty_prompt:'براہ کرم کام کے علاقے کی KML/KMZ فائل منتخب کریں',
+    canvas_empty_hint:'یا "نمونہ نقشہ لوڈ کریں" پر کلک کریں.',
+    toast_success:'کامیابی', error_loading:'خرابی',
+    plantation:'باغ', nirmulan:'نیست و نابود / جڑی بوٹی کنٹرول', smc:'مٹی اور پانی کا تحفظ', anr:'ANR', north_arrow:'N',
+    forest_guard:'جنگل رکشک', forest_beat_officer:'جنگل بیٹ افسر', rfo:'رینج فارسٹ افسر',
+    not_selected:'منتخب نہیں', yes:'ہاں', no:'نہیں', pdf_paper:'PDF کاغذ'
+  },
+  sa: {
+    import_title:'KML / KMZ / GPX सञ्चिका आयात', working_area:'१. कार्यक्षेत्रम्', non_working_area:'२. अकार्यक्षेत्रम्',
+    select_working_file:'कार्यक्षेत्रसञ्चिकां चिनोतु', select_non_working_file:'अकार्यक्षेत्रसञ्चिकां चिनोतु',
+    gps_find:'वर्तमानग्रिडस्थानं अन्वेष्टुम् (GPS)', gps_finding:'GPS सङ्केतः अन्विष्यते...', gps_stop:'GPS निवर्तयतु',
+    gps_inside:'भवान् {grid} ग्रिडे अस्ति.', gps_outside:'भवान् उपचारक्षेत्रात् बहिः अस्ति.',
+    pdf_scale:'मापनम्', pdf_nil:'शून्यम्', legend_non_working:'अकार्यक्षेत्रम्', legend_boundary:'सीमा',
+    legend_baseline:'आधाररेखा', legend_grid:'ग्रिड', legend:'पुरावृत्तम्',
+    range:'परिधिः', round:'मण्डलम्', beat:'पालकः', compartment_no:'कक्षसङ्ख्या',
+    division:'विभागः', sub_division:'उपविभागः', total_area:'समग्रक्षेत्रफलम्', work_area:'उपचारक्षेत्रफलम्',
+    non_work_area:'अनुपचारक्षेत्रफलम्', date:'दिनाङ्कः', pdf_header:'उपचारमानचित्रम् (ग्रिडाधारमानचित्रम्)',
+    pdf_subheader:'उपचारमानचित्रम्', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'प्रारम्भबिन्दुः P-1', end_point:'अन्त्यबिन्दुः P-2',
+    canvas_empty_prompt:'कृपया कार्यक्षेत्रस्य KML/KMZ सञ्चिकां चिनोतु',
+    canvas_empty_hint:'अथवा "नमूनामानचित्रं भारयतु" स्पृशतु.',
+    toast_success:'सफलम्', error_loading:'त्रुटिः',
+    plantation:'वृक्षारोपणम्', nirmulan:'निर्मूलनम् / तृणनियन्त्रणम्', smc:'मृद्जलसंरक्षणम्', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षकः', forest_beat_officer:'वनपालः', rfo:'वनपरिक्षेत्राधिकारी',
+    not_selected:'न चितम्', yes:'आम्', no:'न', pdf_paper:'PDF पत्रम्'
+  },
+  kok: {
+    import_title:'KML / KMZ / GPX फायल आयात', working_area:'1. कार्य क्षेत्र', non_working_area:'2. बिगर कार्य क्षेत्र',
+    select_working_file:'कार्य क्षेत्र फायल निवडा', select_non_working_file:'बिगर कार्य क्षेत्र फायल निवडा',
+    gps_find:'सद्याचें ग्रीड स्थान सोदा (GPS)', gps_finding:'GPS सिग्नल सोदतां...', gps_stop:'GPS बंद करात',
+    gps_inside:'तुमी {grid} ग्रीडांत आसात.', gps_outside:'तुमी उपचार क्षेत्रा भायर आसात.',
+    pdf_scale:'प्रमाण', pdf_nil:'शून्य', legend_non_working:'बिगर कार्य क्षेत्र', legend_boundary:'हद्द',
+    legend_baseline:'बेस लायन', legend_grid:'ग्रीड', legend:'सूची',
+    range:'वनपरिक्षेत्र', round:'परिमंडळ', beat:'नियतक्षेत्र', compartment_no:'कक्ष क्रमांक',
+    division:'वनविभाग', sub_division:'उपविभाग', total_area:'एकूण क्षेत्र', work_area:'उपचार क्षेत्र',
+    non_work_area:'अनुपचार क्षेत्र', date:'दिनांक', pdf_header:'उपचार नकाशा (ग्रीड बेस मॅपसह)',
+    pdf_subheader:'उपचार नकाशा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रीड',
+    start_point:'सुरवात बिंदू P-1', end_point:'अंतिम बिंदू P-2',
+    canvas_empty_prompt:'कृपया उपचार क्षेत्र KML/KMZ फायल निवडा',
+    canvas_empty_hint:'वा "नमुना नकाशा लोड करा" क्लिक करात.',
+    toast_success:'यशस्वी', error_loading:'त्रुटी',
+    plantation:'वृक्षारोपण', nirmulan:'निर्मूलन / तण नियंत्रण', smc:'मृदा आनी जल संधारण', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षक', forest_beat_officer:'वनपाल', rfo:'वनपरिक्षेत्र अधिकारी',
+    not_selected:'निवडूंक ना', yes:'हय', no:'ना', pdf_paper:'PDF कागद'
+  },
+  mai: {
+    import_title:'KML / KMZ / GPX फाइल आयात', working_area:'१. कार्य क्षेत्र', non_working_area:'२. अकार्य क्षेत्र',
+    select_working_file:'कार्य क्षेत्र फाइल चुनू', select_non_working_file:'अकार्य क्षेत्र फाइल चुनू',
+    gps_find:'वर्तमान ग्रिड स्थान खोजू (GPS)', gps_finding:'GPS सिग्नल खोजैत अछि...', gps_stop:'GPS बंद करू',
+    gps_inside:'अहाँ {grid} ग्रिड मे छी.', gps_outside:'अहाँ उपचार क्षेत्रक बाहर छी.',
+    pdf_scale:'माप', pdf_nil:'शून्य', legend_non_working:'अकार्य क्षेत्र', legend_boundary:'सीमा',
+    legend_baseline:'बेस लाइन', legend_grid:'ग्रिड', legend:'संकेत',
+    range:'रेंज', round:'राउंड', beat:'बीट', compartment_no:'कम्पार्टमेंट नं.',
+    division:'प्रभाग', sub_division:'उप प्रभाग', total_area:'कुल क्षेत्र', work_area:'उपचार क्षेत्र',
+    non_work_area:'गैर-उपचार क्षेत्र', date:'तिथि', pdf_header:'उपचार नक्शा (ग्रिड बेस मैप)',
+    pdf_subheader:'उपचार नक्शा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'प्रारंभ बिंदु P-1', end_point:'अंतिम बिंदु P-2',
+    canvas_empty_prompt:'कृपया कार्य क्षेत्र KML/KMZ फाइल चुनू',
+    canvas_empty_hint:'वा "नमूना नक्शा लोड करू" पर क्लिक करू.',
+    toast_success:'सफल', error_loading:'त्रुटि',
+    plantation:'वृक्षारोपण', nirmulan:'निर्मूलन / खरपतवार नियंत्रण', smc:'माटि आ जल संरक्षण', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षक', forest_beat_officer:'वनपाल', rfo:'रेंज फॉरेस्ट ऑफिसर',
+    not_selected:'चयनित नहि', yes:'हाँ', no:'नहि', pdf_paper:'PDF कागज'
+  },
+  doi: {
+    import_title:'KML / KMZ / GPX फाइल आयात', working_area:'1. कम्म आला क्षेत्र', non_working_area:'2. गैर-कम्म आला क्षेत्र',
+    select_working_file:'कम्म आली फाइल चुनो', select_non_working_file:'गैर-कम्म आली फाइल चुनो',
+    gps_find:'मौजूदा ग्रिड थाह खोजो (GPS)', gps_finding:'GPS सिग्नल खोजदा पै...', gps_stop:'GPS बंद करो',
+    gps_inside:'तुसीं {grid} ग्रिड च ओ.', gps_outside:'तुसीं इलाज क्षेत्र थमां बाहर ओ.',
+    pdf_scale:'पैमाना', pdf_nil:'जीरो', legend_non_working:'गैर-कम्म आला क्षेत्र', legend_boundary:'हद',
+    legend_baseline:'बेस लाइन', legend_grid:'ग्रिड', legend:'दंतकथा',
+    range:'रेंज', round:'राउंड', beat:'बीट', compartment_no:'कंपार्टमेंट नं.',
+    division:'डिवीजन', sub_division:'सब डिवीजन', total_area:'कुल क्षेत्र', work_area:'इलाज क्षेत्र',
+    non_work_area:'गैर-इलाज क्षेत्र', date:'तारीख', pdf_header:'इलाज नक्शा (ग्रिड बेस मैप)',
+    pdf_subheader:'इलाज नक्शा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'शुरू बिंदु P-1', end_point:'अंत बिंदु P-2',
+    canvas_empty_prompt:'कृप्या कम्म आली KML/KMZ फाइल चुनो',
+    canvas_empty_hint:'जां "नमूना नक्शा लोड करो" क्लिक करो.',
+    toast_success:'सफल', error_loading:'गलती',
+    plantation:'बाग', nirmulan:'निर्मूलन / नदीन नियंत्रण', smc:'मिट्टी ते पानी संभाल', anr:'ANR', north_arrow:'N',
+    forest_guard:'वन राखा', forest_beat_officer:'वन बीट अफसर', rfo:'रेंज फॉरेस्ट अफसर',
+    not_selected:'चुना नेईं', yes:'हां', no:'नेईं', pdf_paper:'PDF कागज'
+  },
+  sat: {
+    import_title:'KML / KMZ / GPX ᱯᱷᱟᱭᱤᱞ ᱟᱢᱫᱟᱱᱤ', working_area:'᱑. ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ', non_working_area:'᱒. ᱵᱟᱝ ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ',
+    select_working_file:'ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ ᱯᱷᱟᱭᱤᱞ ᱵᱟᱪᱷᱟᱣ ᱢᱮ', select_non_working_file:'ᱵᱟᱝ ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ ᱯᱷᱟᱭᱤᱞ ᱵᱟᱪᱷᱟᱣ ᱢᱮ',
+    gps_find:'ᱱᱤᱛᱚᱜ ᱜᱽᱨᱤᱰ ᱴᱷᱟᱶ ᱯᱟᱱᱛᱮ ᱢᱮ (GPS)', gps_finding:'GPS ᱥᱤᱜᱽᱱᱟᱞ ᱯᱟᱱᱛᱮᱜ ᱠᱟᱱᱟ...', gps_stop:'GPS ᱵᱚᱸᱫᱽ ᱢᱮ',
+    gps_inside:'ᱟᱢ {grid} ᱜᱽᱨᱤᱰ ᱨᱮ ᱢᱮᱱᱟᱢᱟ.', gps_outside:'ᱟᱢ ᱪᱤᱠᱤᱛᱥᱟ ᱡᱟᱭᱜᱟ ᱠᱷᱚᱱ ᱵᱟᱦᱨᱮ ᱢᱮᱱᱟᱢᱟ.',
+    pdf_scale:'ᱢᱟᱯ', pdf_nil:'ᱥᱩᱱ', legend_non_working:'ᱵᱟᱝ ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ', legend_boundary:'ᱥᱤᱢᱟᱸ',
+    legend_baseline:'ᱵᱮᱥ ᱞᱟᱭᱤᱱ', legend_grid:'ᱜᱽᱨᱤᱰ', legend:'ᱠᱟᱛᱷᱟ',
+    range:'ᱨᱮᱸᱡᱽ', round:'ᱨᱟᱣᱩᱸᱰ', beat:'ᱵᱤᱴ', compartment_no:'ᱠᱚᱢᱯᱟᱨᱴᱢᱮᱱᱴ ᱱᱚᱢᱵᱚᱨ',
+    division:'ᱰᱤᱵᱷᱤᱡᱚᱱ', sub_division:'ᱥᱚᱵᱽ ᱰᱤᱵᱷᱤᱡᱚᱱ', total_area:'ᱡᱚᱛᱚ ᱮᱨᱤᱭᱟ', work_area:'ᱪᱤᱠᱤᱛᱥᱟ ᱮᱨᱤᱭᱟ',
+    non_work_area:'ᱵᱟᱝ ᱪᱤᱠᱤᱛᱥᱟ ᱮᱨᱤᱭᱟ', date:'ᱢᱟᱦᱤᱛ', pdf_header:'ᱪᱤᱠᱤᱛᱥᱟ ᱢᱮᱯ (ᱜᱽᱨᱤᱰ ᱵᱮᱥ ᱢᱮᱯ)',
+    pdf_subheader:'ᱪᱤᱠᱤᱛᱥᱟ ᱢᱮᱯ', pdf_area_ha:'ᱦᱮ.', pdf_grid_name:'ᱜᱽᱨᱤᱰ',
+    start_point:'ᱮᱛᱚᱦᱚᱵ ᱴᱷᱟᱶ P-1', end_point:'ᱢᱩᱪᱟᱹᱫ ᱴᱷᱟᱶ P-2',
+    canvas_empty_prompt:'ᱫᱟᱭᱟᱠᱟᱛᱮ ᱠᱟᱹᱢᱤ ᱡᱟᱭᱜᱟ KML/KMZ ᱯᱷᱟᱭᱤᱞ ᱵᱟᱪᱷᱟᱣ ᱢᱮ',
+    canvas_empty_hint:'ᱥᱮ "ᱱᱚᱢᱩᱱᱟ ᱢᱮᱯ ᱞᱳᱰ ᱢᱮ" ᱚᱛ ᱢᱮ.',
+    toast_success:'ᱥᱟᱨᱦᱟᱣ', error_loading:'ᱵᱷᱩᱞ',
+    plantation:'ᱵᱟᱜᱟᱱ', nirmulan:'ᱱᱤᱨᱢᱩᱞᱟᱱ / ᱚᱛᱟ ᱠᱚᱱᱴᱨᱚᱞ', smc:'ᱦᱟᱥᱟ ᱟᱨ ᱫᱟᱜ ᱥᱚᱸᱨᱚᱠᱷᱚᱱ', anr:'ANR', north_arrow:'N',
+    forest_guard:'ᱵᱚᱱ ᱨᱚᱠᱷᱚᱠ', forest_beat_officer:'ᱵᱚᱱ ᱵᱤᱴ ᱚᱯᱷᱤᱥᱟᱨ', rfo:'ᱨᱮᱸᱡᱽ ᱯᱷᱚᱨᱮᱥᱴ ᱚᱯᱷᱤᱥᱟᱨ',
+    not_selected:'ᱵᱟᱝ ᱵᱟᱪᱷᱟᱣ', yes:'ᱦᱚᱭ', no:'ᱵᱟᱝ', pdf_paper:'PDF ᱠᱟᱜᱚᱡᱽ'
+  },
+  ks: {
+    import_title:'KML / KMZ / GPX فایل درآمد', working_area:'1. کام ہند علاقہ', non_working_area:'2. غیر کام علاقہ',
+    select_working_file:'کام ہند فایل ژھاریو', select_non_working_file:'غیر کام فایل ژھاریو',
+    gps_find:'موجودہ گرڈ جاے ژھانڈیو (GPS)', gps_finding:'GPS سگنل ژھانڈان...', gps_stop:'GPS بند کریو',
+    gps_inside:'تُہہ {grid} گرڈس منٛز چھِو.', gps_outside:'تُہہ علاجس علاقہٕ باہر چھِو.',
+    pdf_scale:'پیمانہ', pdf_nil:'صفر', legend_non_working:'غیر کام علاقہ', legend_boundary:'حدود',
+    legend_baseline:'بیس لائن', legend_grid:'گرڈ', legend:'علامات',
+    range:'رینج', round:'راؤنڈ', beat:'بیٹ', compartment_no:'کمپارٹمنٹ نمبر',
+    division:'ڈویژن', sub_division:'ذیلی ڈویژن', total_area:'کل رقبہ', work_area:'علاج رقبہ',
+    non_work_area:'غیر علاج رقبہ', date:'تاریخ', pdf_header:'علاج نقشہ (گرڈ بیس میپ)',
+    pdf_subheader:'علاج نقشہ', pdf_area_ha:'ہیکٹر', pdf_grid_name:'گرڈ',
+    start_point:'آغاز نقطہ P-1', end_point:'اختتام نقطہ P-2',
+    canvas_empty_prompt:'براہ کرم کام ہند KML/KMZ فایل ژھاریو',
+    canvas_empty_hint:'یا "نمونہ نقشہ لوڈ کریو" کلک کریو.',
+    toast_success:'کامیابی', error_loading:'خرابی',
+    plantation:'باغ', nirmulan:'نیست / جڑی بوٹی کنٹرول', smc:'مٹی تہ پانی تحفظ', anr:'ANR', north_arrow:'N',
+    forest_guard:'جنگل رکشک', forest_beat_officer:'جنگل بیٹ افسر', rfo:'رینج فارسٹ افسر',
+    not_selected:'ژھارنہ آمُت', yes:'آں', no:'نہ', pdf_paper:'PDF کاغذ'
+  },
+  sd: {
+    import_title:'KML / KMZ / GPX فائل درآمد', working_area:'1. ڪم وارو علائقو', non_working_area:'2. غير ڪم وارو علائقو',
+    select_working_file:'ڪم واري فائل چونڊيو', select_non_working_file:'غير ڪم واري فائل چونڊيو',
+    gps_find:'موجوده گريڊ هنڌ ڳوليو (GPS)', gps_finding:'GPS سگنل ڳولي رهيو آهي...', gps_stop:'GPS بند ڪريو',
+    gps_inside:'توهان {grid} گريڊ ۾ آهيو.', gps_outside:'توهان علاج واري علائقي کان ٻاهر آهيو.',
+    pdf_scale:'ماپ', pdf_nil:'صفر', legend_non_working:'غير ڪم وارو علائقو', legend_boundary:'حدون',
+    legend_baseline:'بيس لائين', legend_grid:'گريڊ', legend:'نشان',
+    range:'رينج', round:'راونڊ', beat:'بيٽ', compartment_no:'ڪمپارٽمينٽ نمبر',
+    division:'ڊويزن', sub_division:'سب ڊويزن', total_area:'ڪل ايراضي', work_area:'علاج ايراضي',
+    non_work_area:'غير علاج ايراضي', date:'تاريخ', pdf_header:'علاج جو نقشو (گريڊ بيس ميپ)',
+    pdf_subheader:'علاج جو نقشو', pdf_area_ha:'هيڪٽر', pdf_grid_name:'گريڊ',
+    start_point:'شروعاتي نقطو P-1', end_point:'آخري نقطو P-2',
+    canvas_empty_prompt:'مهرباني ڪري ڪم واري KML/KMZ فائل چونڊيو',
+    canvas_empty_hint:'يا "نمونو نقشو لوڊ ڪريو" تي ڪلڪ ڪريو.',
+    toast_success:'ڪاميابي', error_loading:'غلطي',
+    plantation:'باغ', nirmulan:'نيست / گاھ ڪنٽرول', smc:'مٽي ۽ پاڻي تحفظ', anr:'ANR', north_arrow:'N',
+    forest_guard:'ٻيلو رکشڪ', forest_beat_officer:'ٻيلو بيٽ آفيسر', rfo:'رينج فارسٽ آفيسر',
+    not_selected:'نه چونڊيو', yes:'ها', no:'نه', pdf_paper:'PDF ڪاغذ'
+  },
+  brx: {
+    import_title:'KML / KMZ / GPX फाइल आयात', working_area:'1. खामानि जायगा', non_working_area:'2. खामानि नङि जायगा',
+    select_working_file:'खामानि जायगा फाइल सायखʼ', select_non_working_file:'खामानि नङि जायगा फाइल सायखʼ',
+    gps_find:'दा ग्रिड जायगा नागिर (GPS)', gps_finding:'GPS सिग्नल नागिरनाय...', gps_stop:'GPS बन्द खालाम',
+    gps_inside:'नों {grid} ग्रिड आव दं.', gps_outside:'नों उपचार जायगा निफ्राय बाहाय दं.',
+    pdf_scale:'माप', pdf_nil:'शून्य', legend_non_working:'खामानि नङि जायगा', legend_boundary:'सीमा',
+    legend_baseline:'बेस लाइन', legend_grid:'ग्रिड', legend:'सुबुं',
+    range:'रेन्ज', round:'राउन्ड', beat:'बिट', compartment_no:'कम्पार्टमेन्ट नं.',
+    division:'डिभिजन', sub_division:'सब डिभिजन', total_area:'मोनसेबो जायगा', work_area:'उपचार जायगा',
+    non_work_area:'उपचार नङि जायगा', date:'तारिख', pdf_header:'उपचार मानसिफोर (ग्रिड बेस मेप)',
+    pdf_subheader:'उपचार मानसिफोर', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'जागायन बिन्दु P-1', end_point:'जोबोन बिन्दु P-2',
+    canvas_empty_prompt:'अननानो खामानि जायगा KML/KMZ फाइल सायखʼ',
+    canvas_empty_hint:'एबा "नमुना मेप लोड खालाम" आव क्लिक खालाम.',
+    toast_success:'सोलोंथाया', error_loading:'गोरोन्थि',
+    plantation:'बागान', nirmulan:'निर्मूलन / खर-खुजा नियन्त्रण', smc:'हा आरो दै रैखा', anr:'ANR', north_arrow:'N',
+    forest_guard:'बं वारि', forest_beat_officer:'बं बिट अफिसार', rfo:'रेन्ज फरेस्ट अफिसार',
+    not_selected:'सायखʼनाय नङा', yes:'नंगौ', no:'नङा', pdf_paper:'PDF कागज'
+  },
+  mni: {
+    import_title:'KML / KMZ / GPX ফাইল আমদানি', working_area:'১. থবক পামজবা', non_working_area:'২. থবক পামজদবা',
+    select_working_file:'থবক পামজবা ফাইল খল্লু', select_non_working_file:'থবক পামজদবা ফাইল খল্লু',
+    gps_find:'হৌজিক্কী গ্রিড মফম খংবা (GPS)', gps_finding:'GPS সিগ্নেল থিবা চৎলি...', gps_stop:'GPS লেপ্থোক',
+    gps_inside:'নখোয় {grid} গ্রিডতা লৈবা লৈব.', gps_outside:'নখোয় চিকিৎসা লমদমদগী মখাং লৈব.',
+    pdf_scale:'মাপ', pdf_nil:'শূন্য', legend_non_working:'থবক পামজদবা', legend_boundary:'মালেম',
+    legend_baseline:'বেস লাইন', legend_grid:'গ্রিড', legend:'ৱারি',
+    range:'রেঞ্জ', round:'রাউন্ড', beat:'বিট', compartment_no:'কম্পার্টমেন্ট নং',
+    division:'ডিভিশন', sub_division:'সব ডিভিশন', total_area:'পুম্নমক লমদম', work_area:'চিকিৎসা লমদম',
+    non_work_area:'চিকিৎসা লৈতবা লমদম', date:'নুমিৎ', pdf_header:'চিকিৎসা মফম (গ্রিড বেস মেপ)',
+    pdf_subheader:'চিকিৎসা মফম', pdf_area_ha:'হে.', pdf_grid_name:'গ্রিড',
+    start_point:'হৌখিবা মফম P-1', end_point:'লোয়খিবা মফম P-2',
+    canvas_empty_prompt:'চান্নবিয়ু থবক পামজবা KML/KMZ ফাইল খল্লু',
+    canvas_empty_hint:'নত্রগা "নমুনা মেপ লোড তৌ" ক্লিক তৌ.',
+    toast_success:'মখা চৎখ্রে', error_loading:'অশোয়বা',
+    plantation:'লম্বী', nirmulan:'নিংথৌ / লৈবাক কন্ট্রোল', smc:'লাই অমসুং ঈশিং সেংবা', anr:'ANR', north_arrow:'N',
+    forest_guard:'উমাং লৈরবা', forest_beat_officer:'উমাং বিট অফিসর', rfo:'রেঞ্জ ফরেস্ট অফিসর',
+    not_selected:'খল্লমদে', yes:'হৌ', no:'হৌদৌ', pdf_paper:'PDF পেপার'
+  },
+  ne: {
+    import_title:'KML / KMZ / GPX फाइल आयात', working_area:'१. कार्य क्षेत्र', non_working_area:'२. गैर-कार्य क्षेत्र',
+    select_working_file:'कार्य क्षेत्र फाइल चयन गर्नुहोस्', select_non_working_file:'गैर-कार्य क्षेत्र फाइल चयन गर्नुहोस्',
+    gps_find:'हालको ग्रिड स्थान खोज्नुहोस् (GPS)', gps_finding:'GPS सिग्नल खोज्दै...', gps_stop:'GPS बन्द गर्नुहोस्',
+    gps_inside:'तपाईं {grid} ग्रिडमा हुनुहुन्छ.', gps_outside:'तपाईं उपचार क्षेत्र बाहिर हुनुहुन्छ.',
+    pdf_scale:'मापन', pdf_nil:'शून्य', legend_non_working:'गैर-कार्य क्षेत्र', legend_boundary:'सीमा',
+    legend_baseline:'बेस लाइन', legend_grid:'ग्रिड', legend:'संकेत',
+    range:'रेन्ज', round:'राउन्ड', beat:'बिट', compartment_no:'कम्पार्टमेन्ट नं.',
+    division:'विभाग', sub_division:'उप-विभाग', total_area:'कुल क्षेत्र', work_area:'उपचार क्षेत्र',
+    non_work_area:'गैर-उपचार क्षेत्र', date:'मिति', pdf_header:'उपचार नक्सा (ग्रिड बेस म्याप)',
+    pdf_subheader:'उपचार नक्सा', pdf_area_ha:'हे.', pdf_grid_name:'ग्रिड',
+    start_point:'सुरु बिन्दु P-1', end_point:'अन्त्य बिन्दु P-2',
+    canvas_empty_prompt:'कृपया कार्य क्षेत्र KML/KMZ फाइल चयन गर्नुहोस्',
+    canvas_empty_hint:'वा "नमुना नक्सा लोड गर्नुहोस्" क्लिक गर्नुहोस्.',
+    toast_success:'सफल', error_loading:'त्रुटि',
+    plantation:'वृक्षारोपण', nirmulan:'निर्मूलन / झार नियन्त्रण', smc:'माटो र जल संरक्षण', anr:'ANR', north_arrow:'N',
+    forest_guard:'वनरक्षक', forest_beat_officer:'वनपाल', rfo:'रेन्ज फरेस्ट अफिसर',
+    not_selected:'चयन गरिएको छैन', yes:'हो', no:'होइन', pdf_paper:'PDF कागज'
+  }
+};
+
+let currentLang = 'mr';
+function t(k) {
+  const dict = i18n[currentLang] || {};
+  if (dict[k] !== undefined) return dict[k];
+  const en = i18n.en[k];
+  return en !== undefined ? en : k;
+}
+
+// ============ CANVAS & DOM ============
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+const SF = 2;
+
+const $ = id => document.getElementById(id);
+const inputTreatmentTitle = $('inputTreatmentTitle'), inputDivision = $('inputDivision'), inputSubDivision = $('inputSubDivision');
+const inputRange = $('inputRange'), inputRound = $('inputRound'), inputBeat = $('inputBeat'), inputComp = $('inputComp');
+const inputMapDate = $('inputMapDate'), inputTotalArea = $('inputTotalArea'), inputWorkArea = $('inputWorkArea'), inputNonWorkArea = $('inputNonWorkArea');
+const inputVanrakshak = $('inputVanrakshak'), inputVanpal = $('inputVanpal'), inputRFO = $('inputRFO');
+const selectScale = $('selectScale'), badgeScale = $('badgeScale'), badgePaper = $('badgePaper'), badgeKMLStatus = $('badgeKMLStatus');
+const selectLegendPos = $('selectLegendPos');
+const inputWorkingKML = $('inputWorkingKML'), inputNonWorkingKML = $('inputNonWorkingKML');
+const btnUploadWorkingKML = $('btnUploadWorkingKML'), btnUploadNonWorkingKML = $('btnUploadNonWorkingKML');
+const statusWorkingKML = $('statusWorkingKML'), statusNonWorkingKML = $('statusNonWorkingKML');
+const checkNonWorkNil = $('checkNonWorkNil'), btnLoadDemoMap = $('btnLoadDemoMap'), btnClearAllVectors = $('btnClearAllVectors');
+const labelLongestDist = $('labelLongestDist'), labelBearing = $('labelBearing');
+const btnGPS = $('btnGPS'), gpsBtnText = $('gpsBtnText'), btnSimulateGPS = $('btnSimulateGPS'), btnClearGPS = $('btnClearGPS');
+const gridLocationStatus = $('gridLocationStatus'), coordDisplay = $('coordDisplay');
+const btnExportPDF = $('btnExportPDF'), btnShareWhatsApp = $('btnShareWhatsApp');
+const shareModal = $('shareModal'), btnCloseShareModal = $('btnCloseShareModal');
+const btnDownloadAndWhatsApp = $('btnDownloadAndWhatsApp'), btnDirectPDFSave = $('btnDirectPDFSave');
+const shareSummaryText = $('shareSummaryText');
+const toast = $('toast'), toastMsg = $('toastMsg');
+const selectTreatmentType = $('selectTreatmentType');
+const customTreatmentWrap = $('customTreatmentWrap'), inputCustomTreatmentType = $('inputCustomTreatmentType');
+const selectGridSize = $('selectGridSize'), inputGridWidth = $('inputGridWidth'), inputGridHeight = $('inputGridHeight');
+const customGridFields = $('customGridFields'), canvasDimLabel = $('canvasDimLabel');
+const customScaleFields = $('customScaleFields'), inputCustomScaleCm = $('inputCustomScaleCm'), inputCustomScaleM = $('inputCustomScaleM');
+const btnPlaceLocation = $('btnPlaceLocation');
+
+const selectFontSize = $('selectFontSize'), inputTextColor = $('inputTextColor'), selectFontFamily = $('selectFontFamily');
+const accuracyBadge = $('accuracyBadge'), accuracyResults = $('accuracyResults'), btnRunAccuracy = $('btnRunAccuracy');
+const guidelinesModal = $('guidelinesModal'), guidelinesContent = $('guidelinesContent');
+
+// ============ CONSTANTS ============
+const MM_PX = 3.6 * SF, CM_PX = 36 * SF;
+let GRID_ORIGIN_X = 72 * SF, GRID_ORIGIN_Y = 144 * SF;
+let mapBounds = { left: 0, right: 0, top: 0, bottom: 0 };
+const scaleConfigs = {
+  '2cm_100m': { name:'2 cm = 100 m', pxPer100m:72*SF, gridStepPx:72*SF, metersPerGridCell:100 },
+  '1cm_100m': { name:'1 cm = 100 m', pxPer100m:36*SF, gridStepPx:36*SF, metersPerGridCell:100 },
+  '1cm_50m':  { name:'1 cm = 50 m',  pxPer100m:72*SF, gridStepPx:72*SF, metersPerGridCell:50 },
+  '1cm_200m': { name:'1 cm = 200 m', pxPer100m:18*SF, gridStepPx:36*SF, metersPerGridCell:200 }
+};
+let activeScale = { ...scaleConfigs['2cm_100m'] };
+
+// ============ STATE ============
+let rawWorkingPoints = [], workingBoundaryPoints = [];
+let rawNonWorkingPolygons = [], nonWorkingPolygons = [];
+let currentRotationDeg = 0;
+let polyCentroidMeters = { x: 0, y: 0 };
+let baseOrigin = { x: 396 * SF, y: 576 * SF };
+let cellLabelMap = new Map();
+let geoRef = { hasGeo:false, centerLat:0, centerLon:0, northLat:0, southLat:0, eastLon:0, westLon:0 };
+let userLocation = null, isWatchingGPS = false, gpsWatchId = null;
+let placeLocationMode = false;
+
+let panOffset = { x: 0, y: 0 };
+let dragState = null;
+
+let legendOffset = { x: 0, y: 0 };
+let legendDragState = null;
+
+let mapStyle = { fontSize: 'medium', textColor: '#065f46', fontFamily: getFontForLang('mr') };
+function fontSizePx() { return { small: 8, medium: 10, large: 12, xlarge: 14 }[mapStyle.fontSize] || 10; }
+
+const DISPLAY_OPTIONS = [
+  { id:'showBaseline',     def:true, key:'opt_baseline' },
+  { id:'showBaselineMeas', def:true, key:'opt_baseline_meas' },
+  { id:'showGridNaming',   def:true, key:'opt_grid_naming' },
+  { id:'showGridNumbers',  def:true, key:'opt_grid_numbers' },
+  { id:'showGridLines',    def:true, key:'opt_grid_lines' }
+];
+const displayState = {};
+DISPLAY_OPTIONS.forEach(o => displayState[o.id] = o.def);
+
+// ============ FEATURES ============
+const FEATURE_PRESETS = [
+  { id:'road', key:'feature_road', symbol:'road', color:'#334155', enabled:false },
+  { id:'house', key:'feature_house', symbol:'house', color:'#7c2d12', enabled:false },
+  { id:'private_land', key:'feature_private_land', symbol:'private_land', color:'#b45309', enabled:false },
+  { id:'well', key:'feature_well', symbol:'well', color:'#1d4ed8', enabled:false },
+  { id:'borewell', key:'feature_borewell', symbol:'borewell', color:'#0369a1', enabled:false },
+  { id:'pond', key:'feature_pond', symbol:'pond', color:'#0284c7', enabled:false },
+  { id:'water_hole', key:'feature_water_hole', symbol:'water_hole', color:'#0ea5e9', enabled:false },
+  { id:'nala', key:'feature_nala', symbol:'nala', color:'#2563eb', enabled:false },
+  { id:'temple', key:'feature_temple', symbol:'temple', color:'#b91c1c', enabled:false },
+  { id:'school', key:'feature_school', symbol:'school', color:'#7c3aed', enabled:false },
+  { id:'tower', key:'feature_tower', symbol:'tower', color:'#0f172a', enabled:false }
+];
+let legendFeatures = FEATURE_PRESETS.map(f => ({ ...f, markers: [], custom:false }));
+let customFeatures = [];
+let placeModeFeatureId = null;
+
+function allFeatures() { return [...legendFeatures, ...customFeatures]; }
+function getFeatureById(id) { return allFeatures().find(f => f.id === id) || null; }
+function getFeatureLabel(f) { return f.key ? t(f.key) : (f.label || 'Feature'); }
+
+function truncateText(c, text, maxW) {
+  if (c.measureText(text).width <= maxW) return text;
+  let s = text;
+  while (s.length > 1 && c.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s + '…';
+}
+
+function drawFeatureSymbol(c, type, x, y, s, color) {
+  c.save();
+  c.strokeStyle = color; c.fillStyle = color;
+  c.lineWidth = 1.6 * SF; c.lineJoin = 'round'; c.lineCap = 'round';
+  switch (type) {
+    case 'road':
+      c.beginPath();
+      c.moveTo(x - s, y + s * 0.8); c.lineTo(x + s * 0.8, y - s);
+      c.moveTo(x - s * 0.8, y + s); c.lineTo(x + s, y - s * 0.8);
+      c.stroke(); break;
+    case 'house':
+      c.beginPath(); c.rect(x - s * 0.7, y - s * 0.1, s * 1.4, s * 0.9); c.stroke();
+      c.beginPath(); c.moveTo(x - s * 0.9, y - s * 0.1); c.lineTo(x, y - s * 0.9); c.lineTo(x + s * 0.9, y - s * 0.1); c.closePath(); c.stroke(); break;
+    case 'private_land':
+      c.setLineDash([3 * SF, 2 * SF]); c.strokeRect(x - s * 0.8, y - s * 0.7, s * 1.6, s * 1.4); c.setLineDash([]);
+      c.beginPath();
+      for (let i = -1; i <= 1; i++) {
+        c.moveTo(x - s * 0.5 + i * s * 0.5, y + s * 0.6);
+        c.lineTo(x + s * 0.5 + i * s * 0.5, y - s * 0.6);
+      }
+      c.stroke(); break;
+    case 'well':
+      c.beginPath(); c.arc(x, y, s * 0.8, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.arc(x, y, s * 0.3, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(x - s * 0.9, y); c.lineTo(x + s * 0.9, y); c.stroke(); break;
+    case 'borewell':
+      c.beginPath(); c.arc(x, y - s * 0.2, s * 0.45, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.moveTo(x, y + s * 0.25); c.lineTo(x, y + s * 1.0); c.stroke();
+      c.beginPath(); c.arc(x, y + s * 0.2, s * 0.15, 0, Math.PI * 2); c.fill(); break;
+    case 'pond':
+      c.beginPath(); c.ellipse(x, y, s, s * 0.55, 0, 0, Math.PI * 2); c.stroke();
+      c.beginPath();
+      c.moveTo(x - s * 0.7, y);
+      c.quadraticCurveTo(x - s * 0.2, y - s * 0.3, x, y);
+      c.quadraticCurveTo(x + s * 0.3, y + s * 0.2, x + s * 0.7, y);
+      c.stroke(); break;
+    case 'water_hole':
+      c.beginPath(); c.arc(x, y, s * 0.65, 0, Math.PI * 2); c.stroke();
+      c.beginPath();
+      c.moveTo(x - s * 0.4, y);
+      c.quadraticCurveTo(x - s * 0.1, y - s * 0.25, x, y);
+      c.quadraticCurveTo(x + s * 0.15, y + s * 0.2, x + s * 0.4, y);
+      c.stroke(); break;
+    case 'nala':
+      c.beginPath();
+      c.moveTo(x - s, y + s * 0.3);
+      c.bezierCurveTo(x - s * 0.4, y - s * 0.8, x + s * 0.4, y + s * 0.8, x + s, y - s * 0.3);
+      c.stroke();
+      c.beginPath();
+      c.moveTo(x - s, y + s * 0.6);
+      c.bezierCurveTo(x - s * 0.4, y - s * 0.5, x + s * 0.4, y + s * 1.0, x + s, y);
+      c.stroke(); break;
+    case 'temple':
+      c.beginPath(); c.moveTo(x - s * 0.6, y + s * 0.6); c.lineTo(x, y - s * 0.8); c.lineTo(x + s * 0.6, y + s * 0.6); c.closePath(); c.stroke();
+      c.beginPath(); c.moveTo(x, y - s * 0.8); c.lineTo(x, y - s * 1.1); c.stroke(); break;
+    case 'school':
+      c.strokeRect(x - s * 0.8, y - s * 0.5, s * 1.6, s * 1.1);
+      c.beginPath(); c.moveTo(x, y - s * 0.5); c.lineTo(x, y - s * 1.1); c.stroke();
+      c.beginPath(); c.moveTo(x, y - s * 1.1); c.lineTo(x + s * 0.5, y - s * 0.85); c.lineTo(x, y - s * 0.6); c.closePath(); c.fill(); break;
+    case 'tower':
+      c.beginPath(); c.moveTo(x - s * 0.7, y + s * 0.8); c.lineTo(x, y - s * 0.9); c.lineTo(x + s * 0.7, y + s * 0.8); c.stroke();
+      c.beginPath(); c.moveTo(x - s * 0.35, y + s * 0.1); c.lineTo(x + s * 0.35, y + s * 0.1); c.stroke();
+      c.beginPath(); c.moveTo(x - s * 0.55, y + s * 0.5); c.lineTo(x + s * 0.55, y + s * 0.5); c.stroke(); break;
+    default:
+      c.beginPath(); c.moveTo(x, y - s); c.lineTo(x + s, y); c.lineTo(x, y + s); c.lineTo(x - s, y); c.closePath(); c.stroke();
+  }
+  c.restore();
+}
+
+function drawFeatureMarkers() {
+  allFeatures().forEach(f => {
+    f.markers.forEach(mk => {
+      const p = meterToPixel(mk.mx, mk.my);
+      drawFeatureSymbol(ctx, f.symbol, p.x, p.y, 7 * SF, f.color);
+      const label = getFeatureLabel(f);
+      ctx.font = `bold ${9 * SF}px ${mapStyle.fontFamily}`;
+      const w = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(p.x - w / 2 - 3 * SF, p.y + 8 * SF, w + 6 * SF, 14 * SF);
+      ctx.fillStyle = f.color; ctx.textAlign = 'center';
+      ctx.fillText(label, p.x, p.y + 19 * SF);
+    });
+  });
+}
+
+function renderFeatureList() {
+  const wrap = $('legendFeatureList');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  allFeatures().forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-1.5 p-1.5 bg-white border border-indigo-200 rounded-lg';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!f.enabled;
+    cb.className = 'rounded text-indigo-600 flex-shrink-0';
+    cb.addEventListener('change', () => {
+      f.enabled = cb.checked;
+      renderMap();
+      resetAccuracy();
+    });
+
+    const lbl = document.createElement('span');
+    lbl.className = 'flex-1 font-semibold text-indigo-950 text-[11px] leading-tight';
+    lbl.textContent = getFeatureLabel(f);
+
+    const placeBtn = document.createElement('button');
+    placeBtn.type = 'button';
+    const active = placeModeFeatureId === f.id;
+    placeBtn.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold border flex-shrink-0 ' +
+      (active ? 'bg-indigo-700 text-white border-indigo-800' : 'bg-indigo-50 text-indigo-700 border-indigo-300 hover:bg-indigo-100');
+    placeBtn.textContent = active ? 'Click map…' : t('place');
+    placeBtn.addEventListener('click', () => {
+      placeModeFeatureId = active ? null : f.id;
+      renderFeatureList();
+      canvas.style.cursor = placeModeFeatureId ? 'crosshair' : 'grab';
+      if (placeModeFeatureId) showToast(t('click_to_place').replace('{name}', getFeatureLabel(f)));
+      else showToast(t('placement_cancelled'));
+    });
+
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    row.appendChild(placeBtn);
+
+    if (f.custom) {
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'text-rose-500 hover:text-rose-700 text-sm leading-none px-1';
+      rm.innerHTML = '&times;';
+      rm.addEventListener('click', () => {
+        customFeatures = customFeatures.filter(x => x.id !== f.id);
+        if (placeModeFeatureId === f.id) placeModeFeatureId = null;
+        renderFeatureList();
+        renderMap();
+        resetAccuracy();
+      });
+      row.appendChild(rm);
+    }
+
+    wrap.appendChild(row);
+  });
+  const cancelBtn = $('btnCancelPlaceMode');
+  if (cancelBtn) cancelBtn.classList.toggle('hidden', !placeModeFeatureId);
+}
+
+function buildDisplayOptions() {
+  const wrap = $('displayOptions');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  DISPLAY_OPTIONS.forEach(o => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-2 p-2 bg-white border border-sky-200 rounded-lg';
+    const lbl = document.createElement('span');
+    lbl.className = 'font-bold text-sky-950 text-[11px] leading-tight';
+    lbl.textContent = t(o.key);
+    const grp = document.createElement('div');
+    grp.className = 'flex gap-1 flex-shrink-0';
+    ['yes','no'].forEach(v => {
+      const active = (displayState[o.id] === (v === 'yes'));
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'px-2.5 py-0.5 rounded text-[11px] font-bold border transition ' +
+        (active ? 'bg-sky-700 text-white border-sky-800' : 'bg-slate-50 text-slate-600 border-slate-300 hover:bg-slate-100');
+      b.textContent = v === 'yes' ? t('yes') : t('no');
+      b.addEventListener('click', () => {
+        displayState[o.id] = (v === 'yes');
+        buildDisplayOptions(); renderMap(); resetAccuracy();
+        showToast(`${t(o.key)}: ${v === 'yes' ? t('yes') : t('no')}`);
+      });
+      grp.appendChild(b);
+    });
+    row.appendChild(lbl); row.appendChild(grp); wrap.appendChild(row);
+  });
+}
+
+// ============ UTILITIES ============
+function showToast(msg) {
+  toastMsg.textContent = msg;
+  toast.classList.remove('translate-y-20','opacity-0');
+  toast.classList.add('translate-y-0','opacity-100');
+  setTimeout(() => { toast.classList.remove('translate-y-0','opacity-100'); toast.classList.add('translate-y-20','opacity-0'); }, 2600);
+}
+function isPointInPolygon(pt, poly) {
+  if (!poly || poly.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y, xj = poly[j].x, yj = poly[j].y;
+    if (((yi > pt.y) !== (yj > pt.y)) && (pt.x < (xj-xi)*(pt.y-yi)/(yj-yi)+xi)) inside = !inside;
+  }
+  return inside;
+}
+function calcAreaHa(pts) {
+  if (!pts || pts.length < 3) return 0;
+  let a = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i+1) % pts.length;
+    a += pts[i].x * pts[j].y - pts[j].x * pts[i].y;
+  }
+  return Math.abs(a) / 20000;
+}
+function setDefaultDate() {
+  const d = new Date();
+  inputMapDate.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+setDefaultDate();
+function getFormattedDate() {
+  if (!inputMapDate.value) return '';
+  const p = inputMapDate.value.split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : inputMapDate.value;
+}
+
+// ============ CANVAS DIMENSIONS ============
+function updateCanvasDimensions() {
+  const o = document.querySelector('input[name="orientation"]:checked').value;
+  if (o === 'portrait') {
+    canvas.width = 1600; canvas.height = 2320;
+    canvas.style.width = '800px'; canvas.style.height = '1160px';
+    GRID_ORIGIN_X = 72*SF; GRID_ORIGIN_Y = 144*SF;
+    mapBounds = { left: GRID_ORIGIN_X, right: GRID_ORIGIN_X + 18*CM_PX, top: GRID_ORIGIN_Y, bottom: GRID_ORIGIN_Y + 24*CM_PX };
+    canvasDimLabel.textContent = 'Standard A4 Portrait (1600 × 2320 px - HD)';
+  } else {
+    canvas.width = 2320; canvas.height = 1600;
+    canvas.style.width = '1160px'; canvas.style.height = '800px';
+    GRID_ORIGIN_X = 144*SF; GRID_ORIGIN_Y = 72*SF;
+    mapBounds = { left: GRID_ORIGIN_X, right: GRID_ORIGIN_X + 24*CM_PX, top: GRID_ORIGIN_Y, bottom: GRID_ORIGIN_Y + 18*CM_PX };
+    canvasDimLabel.textContent = 'Standard A4 Landscape (2320 × 1600 px - HD)';
+  }
+}
+function applyGridSizeToScale() {
+  const w = parseFloat(inputGridWidth.value) || 100;
+  const ppm = activeScale.pxPer100m / 100;
+  activeScale = { ...activeScale, gridStepPx: w * ppm, metersPerGridCell: w };
+}
+
+// ============ SCALE / WORK TYPE HELPERS ============
+function rebuildActiveScale() {
+  const val = selectScale.value;
+  if (val === 'custom') {
+    const cm = parseFloat(inputCustomScaleCm.value) || 1;
+    const m = parseFloat(inputCustomScaleM.value) || 100;
+    const pxPer100m = cm * CM_PX * 100 / m;
+    activeScale = { name: `${cm} cm = ${m} m`, pxPer100m, gridStepPx: pxPer100m, metersPerGridCell: 100 };
+  } else {
+    activeScale = { ...scaleConfigs[val] };
+  }
+  applyGridSizeToScale();
+  badgeScale.textContent = `${t('pdf_scale')}: ${activeScale.name}`;
+  repositionBaseOrigin();
+  updateTransformInfo();
+  resetAccuracy();
+  renderMap();
+}
+function getTreatmentLabel() {
+  const v = selectTreatmentType.value;
+  if (v === 'custom') {
+    const custom = inputCustomTreatmentType.value.trim();
+    return custom || 'Custom Treatment';
+  }
+  return t(v);
+}
+
+// ============ COORDS ============
+function meterToPixel(mx, my) {
+  const ppm = activeScale.pxPer100m / 100;
+  return { x: baseOrigin.x + panOffset.x + (mx - polyCentroidMeters.x) * ppm,
+           y: baseOrigin.y + panOffset.y - (my - polyCentroidMeters.y) * ppm };
+}
+function pixelToMeter(px, py) {
+  const ppm = activeScale.pxPer100m / 100;
+  return { mx: (px - baseOrigin.x - panOffset.x)/ppm + polyCentroidMeters.x,
+           my: polyCentroidMeters.y - (py - baseOrigin.y - panOffset.y)/ppm };
+}
+function getCellInfoForPixelCell(px, py) {
+  const step = activeScale.gridStepPx;
+  const col = Math.floor((px - GRID_ORIGIN_X)/step);
+  const row = Math.floor((py - GRID_ORIGIN_Y)/step);
+  const baseCol = Math.floor((baseOrigin.x - GRID_ORIGIN_X)/step);
+  const isLeft = col < baseCol;
+  const colNum = isLeft ? (baseCol - col) : (col - baseCol + 1);
+  return { label: `${isLeft?'L':'R'}${colNum}-${row+1}`, col, row };
+}
+function getGridBlockName(mx, my) {
+  const p = meterToPixel(mx, my);
+  const info = getCellInfoForPixelCell(p.x, p.y);
+  return cellLabelMap.get(`${info.col},${info.row}`) || info.label;
+}
+function toDMS(deg, isLat) {
+  if (deg == null || isNaN(deg)) return '--';
+  const dir = isLat ? (deg >= 0 ? 'N' : 'S') : (deg >= 0 ? 'E' : 'W');
+  const abs = Math.abs(deg), d = Math.floor(abs), mF = (abs - d) * 60, m = Math.floor(mF), s = ((mF - m) * 60).toFixed(1);
+  return `${String(d).padStart(2,'0')}°${String(m).padStart(2,'0')}'${String(s).padStart(4,'0')}" ${dir}`;
+}
+function bearingToCompass(deg) { return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45) % 8]; }
+
+// ============ ROTATION ============
+function applyRotation(deg) {
+  currentRotationDeg = deg;
+  if (rawWorkingPoints.length === 0) { workingBoundaryPoints = []; nonWorkingPolygons = []; cellLabelMap.clear(); renderMap(); return; }
+  let rcx = 0, rcy = 0;
+  rawWorkingPoints.forEach(p => { rcx += p.x; rcy += p.y; });
+  rcx /= rawWorkingPoints.length; rcy /= rawWorkingPoints.length;
+  const rad = deg * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+  workingBoundaryPoints = rawWorkingPoints.map(p => {
+    const dx = p.x - rcx, dy = p.y - rcy;
+    return { x: Math.round(rcx + dx*cos - dy*sin), y: Math.round(rcy + dx*sin + dy*cos) };
+  });
+  nonWorkingPolygons = rawNonWorkingPolygons.map(poly => poly.map(p => {
+    const dx = p.x - rcx, dy = p.y - rcy;
+    return { x: Math.round(rcx + dx*cos - dy*sin), y: Math.round(rcy + dx*sin + dy*cos) };
+  }));
+  let cx = 0, cy = 0;
+  workingBoundaryPoints.forEach(p => { cx += p.x; cy += p.y; });
+  polyCentroidMeters = { x: cx/workingBoundaryPoints.length, y: cy/workingBoundaryPoints.length };
+  repositionBaseOrigin();
+  updateLongestDistanceMetric();
+  renderMap();
+}
+function repositionBaseOrigin() {
+  const cX = (mapBounds.left + mapBounds.right)/2, cY = (mapBounds.top + mapBounds.bottom)/2;
+  const step = activeScale.gridStepPx;
+  baseOrigin.x = GRID_ORIGIN_X + Math.round((cX - GRID_ORIGIN_X)/step) * step;
+  baseOrigin.y = GRID_ORIGIN_Y + Math.round((cY - GRID_ORIGIN_Y)/step) * step;
+}
+function updateLongestDistanceMetric() {
+  if (workingBoundaryPoints.length < 2) { labelLongestDist.textContent = 'Axis: 0 m'; labelBearing.textContent = 'Bearing: --°'; return; }
+  let maxD = 0;
+  for (let i = 0; i < workingBoundaryPoints.length; i++)
+    for (let j = i+1; j < workingBoundaryPoints.length; j++) {
+      const d = Math.hypot(workingBoundaryPoints[i].x - workingBoundaryPoints[j].x, workingBoundaryPoints[i].y - workingBoundaryPoints[j].y);
+      if (d > maxD) maxD = d;
+    }
+  labelLongestDist.textContent = `Axis: ${Math.round(maxD)} m`;
+  const bl = computeBaseline();
+  if (bl) labelBearing.textContent = `Bearing: ${Math.round(bl.bearingDeg)}° ${bearingToCompass(bl.bearingDeg)}`;
+}
+function autoAlignToLongestDistance() {
+  if (rawWorkingPoints.length < 2) { showToast(t('toast_please_upload_kml')); return; }
+  const opt = document.querySelector('input[name="baselineOption"]:checked').value;
+  if (opt === 'longest_axis') {
+    let maxD = 0, pA = rawWorkingPoints[0], pB = rawWorkingPoints[1];
+    for (let i = 0; i < rawWorkingPoints.length; i++)
+      for (let j = i+1; j < rawWorkingPoints.length; j++) {
+        const d = Math.hypot(rawWorkingPoints[i].x - rawWorkingPoints[j].x, rawWorkingPoints[i].y - rawWorkingPoints[j].y);
+        if (d > maxD) { maxD = d; pA = rawWorkingPoints[i]; pB = rawWorkingPoints[j]; }
+      }
+    const angle = Math.atan2(pB.y - pA.y, pB.x - pA.x) * 180 / Math.PI;
+    let rot = Math.round(90 - angle);
+    while (rot < 0) rot += 360;
+    applyRotation(rot % 360);
+    showToast(t('toast_rotation').replace('{angle}', rot % 360));
+  } else { applyRotation(0); }
+}
+
+// ============ BASELINE ============
+function computeBaseline() {
+  if (workingBoundaryPoints.length < 3) return null;
+  const opt = document.querySelector('input[name="baselineOption"]:checked').value;
+  let p1 = null, p2 = null, bearing = 0;
+  if (opt === 'grid_parallel') {
+    const cy = polyCentroidMeters.y;
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < workingBoundaryPoints.length; i++) {
+      const j = (i+1) % workingBoundaryPoints.length;
+      const a = workingBoundaryPoints[i], b = workingBoundaryPoints[j];
+      if ((a.y <= cy && b.y >= cy) || (a.y >= cy && b.y <= cy)) {
+        if (a.y !== b.y) {
+          const tt = (cy - a.y)/(b.y - a.y);
+          const x = a.x + tt*(b.x - a.x);
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+        }
+      }
+    }
+    if (minX === Infinity) {
+      let mn = Infinity, mx = -Infinity;
+      workingBoundaryPoints.forEach(p => { if (p.x < mn) mn = p.x; if (p.x > mx) mx = p.x; });
+      minX = mn; maxX = mx;
+    }
+    p1 = { x: minX, y: cy }; p2 = { x: maxX, y: cy };
+    p2.y = p1.y;
+    bearing = 90;
+  } else {
+    let maxD = 0;
+    for (let i = 0; i < workingBoundaryPoints.length; i++)
+      for (let j = i+1; j < workingBoundaryPoints.length; j++) {
+        const d = Math.hypot(workingBoundaryPoints[i].x - workingBoundaryPoints[j].x, workingBoundaryPoints[i].y - workingBoundaryPoints[j].y);
+        if (d > maxD) { maxD = d; p1 = workingBoundaryPoints[i]; p2 = workingBoundaryPoints[j]; }
+      }
+    if (p1 && p2) bearing = (Math.atan2(p2.x - p1.x, p2.y - p1.y) * 180 / Math.PI + 360) % 360;
+  }
+  return { p1, p2, bearingDeg: bearing };
+}
+
+// ============ FILE PARSER ============
+async function parseSpatialFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  let xml = '';
+  if (ext === 'kmz') {
+    if (typeof JSZip === 'undefined') throw new Error('JSZip not loaded');
+    const zip = await JSZip.loadAsync(file);
+    const kml = Object.values(zip.files).find(f => f.name.toLowerCase().endsWith('.kml'));
+    if (!kml) throw new Error('No KML in KMZ');
+    xml = await kml.async('string');
+  } else xml = await file.text();
+  const doc = new DOMParser().parseFromString(xml, 'text/xml');
+  const coords = [];
+  const polys = doc.getElementsByTagName('Polygon');
+  if (polys.length > 0) {
+    const outer = polys[0].getElementsByTagName('outerBoundaryIs')[0];
+    const ce = outer ? outer.getElementsByTagName('coordinates')[0] : null;
+    if (ce) ce.textContent.trim().split(/\s+/).forEach(tkn => {
+      const p = tkn.split(',');
+      if (p.length >= 2) {
+        const lon = parseFloat(p[0]), lat = parseFloat(p[1]);
+        if (!isNaN(lat) && !isNaN(lon)) coords.push({ lat, lon });
+      }
+    });
+  }
+  if (coords.length < 3) doc.querySelectorAll('trkseg trkpt').forEach(pt => {
+    const lat = parseFloat(pt.getAttribute('lat')), lon = parseFloat(pt.getAttribute('lon'));
+    if (!isNaN(lat) && !isNaN(lon)) coords.push({ lat, lon });
+  });
+  if (coords.length < 3) throw new Error(t('toast_error_parse'));
+  return coords;
+}
+
+// ============ FILE UPLOADS ============
+btnUploadWorkingKML.addEventListener('click', () => inputWorkingKML.click());
+inputWorkingKML.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const coords = await parseSpatialFile(f);
+    let minLat=90,maxLat=-90,minLon=180,maxLon=-180;
+    coords.forEach(c => { if(c.lat<minLat)minLat=c.lat; if(c.lat>maxLat)maxLat=c.lat; if(c.lon<minLon)minLon=c.lon; if(c.lon>maxLon)maxLon=c.lon; });
+    const cLat = (minLat+maxLat)/2, cLon = (minLon+maxLon)/2;
+    geoRef = { hasGeo:true, centerLat:cLat, centerLon:cLon, northLat:maxLat, southLat:minLat, eastLon:maxLon, westLon:minLon };
+    const latM = 111320, lonM = 111320 * Math.cos(cLat * Math.PI / 180);
+    rawWorkingPoints = coords.map(c => ({ x: Math.round((c.lon-cLon)*lonM), y: Math.round((c.lat-cLat)*latM) }));
+    const ha = calcAreaHa(rawWorkingPoints).toFixed(2);
+    inputWorkArea.value = ha;
+    rawNonWorkingPolygons = []; nonWorkingPolygons = [];
+    panOffset = { x: 0, y: 0 }; legendOffset = { x: 0, y: 0 };
+    checkNonWorkNil.checked = false; inputNonWorkArea.value = '';
+    statusNonWorkingKML.textContent = t('not_selected');
+    recalcTotalArea();
+    statusWorkingKML.textContent = `${f.name.substring(0,14)} (${ha} Ha.)`;
+    statusWorkingKML.className = 'text-[10px] text-emerald-700 font-bold';
+    badgeKMLStatus.textContent = 'KML loaded';
+    badgeKMLStatus.className = 'bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]';
+    autoAlignToLongestDistance();
+    updateTransformInfo();
+    resetAccuracy();
+    showToast(t('toast_area_loaded').replace('{area}', ha));
+  } catch (err) { showToast(t('error_loading') + ': ' + err.message); }
+});
+
+btnUploadNonWorkingKML.addEventListener('click', () => inputNonWorkingKML.click());
+inputNonWorkingKML.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    if (!geoRef.hasGeo || rawWorkingPoints.length < 3) { showToast(t('toast_please_upload_kml')); return; }
+    const coords = await parseSpatialFile(f);
+    const latM = 111320, lonM = 111320 * Math.cos(geoRef.centerLat * Math.PI / 180);
+    const poly = coords.map(c => ({ x: Math.round((c.lon-geoRef.centerLon)*lonM), y: Math.round((c.lat-geoRef.centerLat)*latM) }));
+    rawNonWorkingPolygons = [poly];
+    checkNonWorkNil.checked = false;
+    const ha = calcAreaHa(poly).toFixed(2);
+    inputNonWorkArea.value = ha;
+    statusNonWorkingKML.textContent = `${f.name.substring(0,14)} (${ha} Ha.)`;
+    statusNonWorkingKML.className = 'text-[10px] text-amber-700 font-bold';
+    recalcTotalArea();
+    applyRotation(currentRotationDeg);
+    resetAccuracy();
+    showToast(t('toast_non_work_loaded').replace('{area}', ha));
+  } catch (err) { showToast(t('error_loading') + ': ' + err.message); }
+});
+
+checkNonWorkNil.addEventListener('change', () => {
+  if (checkNonWorkNil.checked) {
+    rawNonWorkingPolygons = []; nonWorkingPolygons = [];
+    inputNonWorkArea.value = t('pdf_nil');
+    statusNonWorkingKML.textContent = t('pdf_nil');
+    statusNonWorkingKML.className = 'text-[10px] text-slate-500 italic';
+    recalcTotalArea(); renderMap(); showToast(t('toast_nil_set'));
+  } else {
+    inputNonWorkArea.value = '';
+    statusNonWorkingKML.textContent = t('not_selected');
+    statusNonWorkingKML.className = 'text-[10px] text-slate-500 font-mono';
+    recalcTotalArea(); renderMap();
+  }
+  resetAccuracy();
+});
+
+function recalcTotalArea() {
+  const w = parseFloat(inputWorkArea.value) || 0;
+  let nw = 0;
+  if (!checkNonWorkNil.checked && inputNonWorkArea.value !== t('pdf_nil')) nw = parseFloat(inputNonWorkArea.value) || 0;
+  inputTotalArea.value = (w + nw).toFixed(2);
+}
+
+btnLoadDemoMap.addEventListener('click', () => {
+  rawWorkingPoints = [
+    {x:-50,y:560},{x:-70,y:530},{x:-140,y:460},{x:-180,y:410},{x:-180,y:350},{x:-130,y:250},
+    {x:-120,y:150},{x:-125,y:0},{x:-160,y:-100},{x:-210,y:-200},{x:-260,y:-300},{x:-250,y:-350},
+    {x:-230,y:-410},{x:-190,y:-450},{x:-130,y:-460},{x:-70,y:-440},{x:0,y:-400},{x:70,y:-360},
+    {x:130,y:-310},{x:165,y:-290},{x:160,y:-240},{x:220,y:-150},{x:260,y:-50},{x:290,y:0},
+    {x:260,y:60},{x:200,y:140},{x:140,y:230},{x:60,y:330},{x:20,y:420},{x:-10,y:520}
+  ];
+  rawNonWorkingPolygons = [[{x:70,y:40},{x:120,y:50},{x:110,y:-20},{x:60,y:-10}]];
+  inputWorkArea.value = '38.50';
+  inputNonWorkArea.value = '6.50';
+  checkNonWorkNil.checked = false;
+  recalcTotalArea();
+  panOffset = { x: 0, y: 0 }; legendOffset = { x: 0, y: 0 };
+  statusWorkingKML.textContent = 'Sample (38.5 Ha.)';
+  statusWorkingKML.className = 'text-[10px] text-emerald-700 font-bold';
+  statusNonWorkingKML.textContent = 'Sample (6.5 Ha.)';
+  statusNonWorkingKML.className = 'text-[10px] text-amber-700 font-bold';
+  badgeKMLStatus.textContent = 'Sample Map';
+  badgeKMLStatus.className = 'bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]';
+  geoRef.hasGeo = false;
+  autoAlignToLongestDistance();
+  updateTransformInfo();
+  resetAccuracy();
+  showToast(t('load_demo_toast'));
+});
+
+btnClearAllVectors.addEventListener('click', () => {
+  rawWorkingPoints = []; workingBoundaryPoints = []; rawNonWorkingPolygons = []; nonWorkingPolygons = [];
+  cellLabelMap.clear(); userLocation = null;
+  panOffset = { x: 0, y: 0 }; currentRotationDeg = 0; legendOffset = { x: 0, y: 0 };
+  inputWorkArea.value = ''; inputNonWorkArea.value = ''; inputTotalArea.value = '';
+  checkNonWorkNil.checked = false;
+  statusWorkingKML.textContent = t('not_selected');
+  statusNonWorkingKML.textContent = t('not_selected');
+  badgeKMLStatus.textContent = 'Empty Map';
+  badgeKMLStatus.className = 'bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[11px]';
+  geoRef.hasGeo = false;
+  updateTransformInfo();
+  resetAccuracy();
+  renderMap(); showToast(t('clear_map_toast'));
+});
+
+// ============ RENDER ============
+function renderMap() {
+  updatePaperBadge();
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawGreenGraphPaper();
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5*SF;
+  ctx.strokeRect(mapBounds.left - 24*SF, mapBounds.top - 84*SF, (mapBounds.right-mapBounds.left)+48*SF, (mapBounds.bottom-mapBounds.top)+184*SF);
+  drawProminentMapHeader();
+  if (workingBoundaryPoints.length < 3) {
+    drawEmptyWorkPrompt(); drawSolidLegendBox(); drawOfficialSignatures(); ctx.restore(); return;
+  }
+  rebuildCellLabels();
+  if (displayState.showBaseline)     drawRedBaseline();
+  if (displayState.showGridNaming)   drawGridColumnLabels();
+  drawNonWorkingArea();
+  if (displayState.showGridLines)    drawBlueGridInsidePolygon();
+  if (displayState.showGridNumbers)  drawSubPlotLabels();
+  drawBoundaryPerimeter();
+  drawFeatureMarkers();
+  if (userLocation) drawUserPin();
+  drawSolidLegendBox();
+  drawOfficialSignatures();
+  ctx.restore();
+}
+
+function drawEmptyWorkPrompt() {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = mapStyle.textColor;
+  ctx.font = `bold ${15*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillText(t('canvas_empty_prompt'), canvas.width/2, mapBounds.top + 280*SF);
+  ctx.font = `${12*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = '#64748b';
+  ctx.fillText(t('canvas_empty_hint'), canvas.width/2, mapBounds.top + 305*SF);
+}
+
+function drawGreenGraphPaper() {
+  const x0 = mapBounds.left, x1 = mapBounds.right, y0 = mapBounds.top, y1 = mapBounds.bottom;
+  ctx.fillStyle = '#f3fbf4'; ctx.fillRect(x0, y0, x1-x0, y1-y0);
+  [{s:MM_PX,c:'#d7f2dc',w:0.5},{s:MM_PX*5,c:'#9be0a8',w:0.75},{s:MM_PX*10,c:'#43a054',w:1.1},{s:MM_PX*20,c:'#277a36',w:1.5}].forEach(L => {
+    ctx.strokeStyle = L.c; ctx.lineWidth = L.w*SF; ctx.beginPath();
+    for (let x = x0; x <= x1; x += L.s) { ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
+    for (let y = y0; y <= y1; y += L.s) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
+    ctx.stroke();
+  });
+}
+
+function drawProminentMapHeader() {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#0f172a';
+  ctx.font = `bold ${16*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillText(t('pdf_header'), canvas.width/2, mapBounds.top - 58*SF);
+  ctx.font = `${13*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = '#475569';
+  ctx.fillText(t('pdf_subheader'), canvas.width/2, mapBounds.top - 42*SF);
+  const title = inputTreatmentTitle.value.trim() || getTreatmentLabel();
+  ctx.fillStyle = '#1d4ed8';
+  ctx.font = `800 ${17*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillText(title, canvas.width/2, mapBounds.top - 24*SF);
+  const r = inputRange.value.trim() || '-', rd = inputRound.value.trim() || '-';
+  const b = inputBeat.value.trim() || '-', c = inputComp.value.trim() || '-';
+  ctx.font = `bold ${12.5*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = mapStyle.textColor;
+  ctx.fillText(`${t('range')}: ${r}  |  ${t('round')}: ${rd}  |  ${t('beat')}: ${b}  |  ${t('compartment_no')}: ${c}`, canvas.width/2, mapBounds.top - 6*SF);
+  ctx.textAlign = 'left';
+  ctx.font = `bold ${12*SF}px ${mapStyle.fontFamily}`;
+  let y = mapBounds.top + 60*SF;
+  const addLine = (lbl, val, col) => { if (!val) return; ctx.fillStyle = col || mapStyle.textColor; ctx.fillText(`${lbl} - ${val}`, mapBounds.left + 4*SF, y); y += 20*SF; };
+  addLine(t('division'), inputDivision.value, '#0f172a');
+  addLine(t('sub_division'), inputSubDivision.value, '#0f172a');
+  addLine(t('beat'), inputBeat.value, '#0f172a');
+  addLine(t('compartment_no'), inputComp.value, '#0f172a');
+  addLine(t('total_area'), inputTotalArea.value ? `${inputTotalArea.value} ${t('pdf_area_ha')}` : '', '#0f172a');
+  addLine(t('work_area'), inputWorkArea.value ? `${inputWorkArea.value} ${t('pdf_area_ha')}` : '', '#047857');
+  if (inputNonWorkArea.value) {
+    const nw = inputNonWorkArea.value === t('pdf_nil') ? t('pdf_nil') : `${inputNonWorkArea.value} ${t('pdf_area_ha')}`;
+    addLine(t('non_work_area'), nw, '#b45309');
+  }
+  const ds = getFormattedDate();
+  if (ds) { ctx.fillStyle = '#334155'; ctx.font = `bold ${11.5*SF}px ${mapStyle.fontFamily}`; ctx.fillText(`${t('date')}: ${ds}`, mapBounds.left + 4*SF, y + 6*SF); }
+}
+
+function drawRedBaseline() {
+  const bl = computeBaseline(); if (!bl || !bl.p1 || !bl.p2) return;
+  const p1 = meterToPixel(bl.p1.x, bl.p1.y), p2 = meterToPixel(bl.p2.x, bl.p2.y);
+  const isParallel = document.querySelector('input[name="baselineOption"]:checked').value === 'grid_parallel';
+  if (isParallel) p2.y = p1.y;
+  ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3*SF;
+  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+  const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+  ctx.fillStyle = '#dc2626';
+  ctx.beginPath();
+  ctx.moveTo(p2.x, p2.y);
+  ctx.lineTo(p2.x - 12*SF*Math.cos(angle-0.4), p2.y - 12*SF*Math.sin(angle-0.4));
+  ctx.lineTo(p2.x - 12*SF*Math.cos(angle+0.4), p2.y - 12*SF*Math.sin(angle+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.font = `bold ${10*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = '#991b1b'; ctx.textAlign = 'center';
+  ctx.fillText(t('start_point'), p1.x, p1.y - 12*SF);
+  ctx.fillText(t('end_point'), p2.x, p2.y - 12*SF);
+  ctx.font = `bold ${9*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = '#dc2626';
+  ctx.fillText('BASELINE', (p1.x+p2.x)/2, (p1.y+p2.y)/2 - 8*SF);
+  if (!displayState.showBaselineMeas) return;
+  const distM = Math.hypot(bl.p2.x - bl.p1.x, bl.p2.y - bl.p1.y);
+  ctx.font = `bold ${9*SF}px ${mapStyle.fontFamily}`; ctx.fillStyle = '#991b1b'; ctx.textAlign = 'center';
+  for (let d = 0; d <= distM; d += 100) {
+    const tt = distM === 0 ? 0 : d/distM;
+    const cx = p1.x + tt*(p2.x-p1.x), cy = p1.y + tt*(p2.y-p1.y);
+    const px = -Math.sin(angle)*6*SF, py = Math.cos(angle)*6*SF;
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.5*SF;
+    ctx.beginPath(); ctx.moveTo(cx-px, cy-py); ctx.lineTo(cx+px, cy+py); ctx.stroke();
+    ctx.fillText(`${d}m`, cx+px*2, cy+py*2+3*SF);
+  }
+}
+
+function drawGridColumnLabels() {
+  if (workingBoundaryPoints.length < 3) return;
+  const step = activeScale.gridStepPx;
+  const firstX = GRID_ORIGIN_X + Math.ceil((mapBounds.left - GRID_ORIGIN_X)/step) * step;
+  const rowY = baseOrigin.y + panOffset.y;
+  ctx.font = `bold ${10*SF}px ${mapStyle.fontFamily}`; ctx.textAlign = 'center';
+  let idx = 0; const AB = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let x = firstX; x < mapBounds.right; x += step) {
+    const m = pixelToMeter(x + step/2, rowY);
+    if (isPointInPolygon({ x: m.mx, y: m.my }, workingBoundaryPoints)) {
+      const px = x + step/2, py = rowY;
+      const lbl = idx === 0 ? '0' : AB[(idx-1) % 26];
+      ctx.fillStyle = '#1e3a8a'; ctx.fillText(lbl, px, py - 8*SF);
+      ctx.font = `bold ${8*SF}px ${mapStyle.fontFamily}`;
+      ctx.fillStyle = '#0369a1'; ctx.fillText(`${lbl}L1`, px, py - 20*SF);
+      ctx.fillStyle = '#0284c7'; ctx.fillText(`${lbl}R1`, px, py + 14*SF);
+      ctx.font = `bold ${10*SF}px ${mapStyle.fontFamily}`;
+      idx++;
+    }
+  }
+}
+
+function drawNonWorkingArea() {
+  if (checkNonWorkNil.checked || nonWorkingPolygons.length === 0 || workingBoundaryPoints.length < 3) return;
+  ctx.save();
+  ctx.beginPath();
+  const p0 = meterToPixel(workingBoundaryPoints[0].x, workingBoundaryPoints[0].y);
+  ctx.moveTo(p0.x, p0.y);
+  for (let i = 1; i < workingBoundaryPoints.length; i++) {
+    const p = meterToPixel(workingBoundaryPoints[i].x, workingBoundaryPoints[i].y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath(); ctx.clip();
+  nonWorkingPolygons.forEach(poly => {
+    if (poly.length < 3) return;
+    ctx.beginPath();
+    const q0 = meterToPixel(poly[0].x, poly[0].y);
+    ctx.moveTo(q0.x, q0.y);
+    for (let i = 1; i < poly.length; i++) {
+      const p = meterToPixel(poly[i].x, poly[i].y);
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(245,158,11,0.3)'; ctx.fill();
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1.8*SF; ctx.stroke();
+  });
+  ctx.restore();
+  nonWorkingPolygons.forEach(poly => {
+    if (poly.length < 3) return;
+    let cx = 0, cy = 0;
+    poly.forEach(p => { cx += p.x; cy += p.y; });
+    cx /= poly.length; cy /= poly.length;
+    const c = meterToPixel(cx, cy);
+    if (isPointInPolygon({ x: cx, y: cy }, workingBoundaryPoints)) {
+      ctx.font = `bold ${fontSizePx()*SF}px ${mapStyle.fontFamily}`;
+      ctx.fillStyle = mapStyle.textColor; ctx.textAlign = 'center';
+      ctx.fillText(t('legend_non_working'), c.x, c.y + 3*SF);
+    }
+  });
+}
+
+function rebuildCellLabels() {
+  cellLabelMap.clear();
+  if (workingBoundaryPoints.length < 3) return;
+  const step = activeScale.gridStepPx;
+  const firstX = GRID_ORIGIN_X + Math.ceil((mapBounds.left - GRID_ORIGIN_X)/step) * step;
+  const firstY = GRID_ORIGIN_Y + Math.ceil((mapBounds.top - GRID_ORIGIN_Y)/step) * step;
+  let counter = 1;
+  for (let y = firstY; y < mapBounds.bottom; y += step) {
+    for (let x = firstX; x < mapBounds.right; x += step) {
+      const cx = x + step/2, cy = y + step/2;
+      const m = pixelToMeter(cx, cy);
+      if (isPointInPolygon({ x: m.mx, y: m.my }, workingBoundaryPoints)) {
+        const key = `${Math.floor((x-GRID_ORIGIN_X)/step)},${Math.floor((y-GRID_ORIGIN_Y)/step)}`;
+        cellLabelMap.set(key, String(counter++));
+      }
+    }
+  }
+}
+
+function drawBlueGridInsidePolygon() {
+  ctx.save();
+  ctx.beginPath();
+  const p0 = meterToPixel(workingBoundaryPoints[0].x, workingBoundaryPoints[0].y);
+  ctx.moveTo(p0.x, p0.y);
+  for (let i = 1; i < workingBoundaryPoints.length; i++) {
+    const p = meterToPixel(workingBoundaryPoints[i].x, workingBoundaryPoints[i].y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath(); ctx.clip();
+  const step = activeScale.gridStepPx;
+  const firstX = GRID_ORIGIN_X + Math.ceil((mapBounds.left - GRID_ORIGIN_X)/step) * step;
+  const firstY = GRID_ORIGIN_Y + Math.ceil((mapBounds.top - GRID_ORIGIN_Y)/step) * step;
+  ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 1.4*SF;
+  ctx.beginPath();
+  for (let x = firstX; x < mapBounds.right; x += step) { ctx.moveTo(x, mapBounds.top); ctx.lineTo(x, mapBounds.bottom); }
+  for (let y = firstY; y < mapBounds.bottom; y += step) { ctx.moveTo(mapBounds.left, y); ctx.lineTo(mapBounds.right, y); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSubPlotLabels() {
+  ctx.save();
+  ctx.beginPath();
+  const p0 = meterToPixel(workingBoundaryPoints[0].x, workingBoundaryPoints[0].y);
+  ctx.moveTo(p0.x, p0.y);
+  for (let i = 1; i < workingBoundaryPoints.length; i++) {
+    const p = meterToPixel(workingBoundaryPoints[i].x, workingBoundaryPoints[i].y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath(); ctx.clip();
+  const step = activeScale.gridStepPx;
+  const firstX = GRID_ORIGIN_X + Math.ceil((mapBounds.left - GRID_ORIGIN_X)/step) * step;
+  const firstY = GRID_ORIGIN_Y + Math.ceil((mapBounds.top - GRID_ORIGIN_Y)/step) * step;
+  ctx.font = `bold ${9.5*SF}px ${mapStyle.fontFamily}`; ctx.textAlign = 'center';
+  for (let y = firstY; y < mapBounds.bottom; y += step) {
+    for (let x = firstX; x < mapBounds.right; x += step) {
+      const key = `${Math.floor((x-GRID_ORIGIN_X)/step)},${Math.floor((y-GRID_ORIGIN_Y)/step)}`;
+      if (!cellLabelMap.has(key)) continue;
+      ctx.fillStyle = mapStyle.textColor;
+      ctx.fillText(cellLabelMap.get(key), x + step/2, y + step/2 + 3*SF);
+    }
+  }
+  ctx.restore();
+}
+
+function drawBoundaryPerimeter() {
+  ctx.beginPath();
+  const p0 = meterToPixel(workingBoundaryPoints[0].x, workingBoundaryPoints[0].y);
+  ctx.moveTo(p0.x, p0.y);
+  for (let i = 1; i < workingBoundaryPoints.length; i++) {
+    const p = meterToPixel(workingBoundaryPoints[i].x, workingBoundaryPoints[i].y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(16,185,129,0.08)'; ctx.fill();
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 2.4*SF; ctx.lineJoin = 'round'; ctx.stroke();
+  workingBoundaryPoints.forEach(pt => {
+    const p = meterToPixel(pt.x, pt.y);
+    ctx.fillStyle = '#065f46';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.5*SF, 0, Math.PI*2); ctx.fill();
+  });
+  let nP = null, sP = null, eP = null, wP = null;
+  if (geoRef.hasGeo) {
+    let maxLat = -Infinity, minLat = Infinity, maxLon = -Infinity, minLon = Infinity;
+    rawWorkingPoints.forEach((pt, idx) => {
+      const r = rawWorkingPoints[idx];
+      if (r.y > maxLat) { maxLat = r.y; nP = pt; }
+      if (r.y < minLat) { minLat = r.y; sP = pt; }
+      if (r.x > maxLon) { maxLon = r.x; eP = pt; }
+      if (r.x < minLon) { minLon = r.x; wP = pt; }
+    });
+  } else {
+    workingBoundaryPoints.forEach(pt => {
+      if (!nP || pt.y > nP.y) nP = pt;
+      if (!sP || pt.y < sP.y) sP = pt;
+      if (!eP || pt.x > eP.x) eP = pt;
+      if (!wP || pt.x < wP.x) wP = pt;
+    });
+  }
+  ctx.font = `bold ${9.5*SF}px ${mapStyle.fontFamily}`; ctx.fillStyle = '#0f172a';
+  if (nP) { const p = meterToPixel(nP.x, nP.y); ctx.textAlign = 'center';
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.northLat, true) : 'N - 21° 32\' 04.4"', p.x, p.y - 18*SF);
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.centerLon, false) : 'E - 079° 13\' 58.60"', p.x, p.y - 7*SF); }
+  if (wP) { const p = meterToPixel(wP.x, wP.y); ctx.textAlign = 'right';
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.centerLat, true) : 'N - 21° 31\' 46.72"', p.x - 8*SF, p.y - 5*SF);
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.westLon, false) : 'E - 079° 13\' 53.91"', p.x - 8*SF, p.y + 7*SF); }
+  if (eP) { const p = meterToPixel(eP.x, eP.y); ctx.textAlign = 'left';
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.centerLat, true) : 'N - 21° 31\' 46.72"', p.x + 8*SF, p.y - 5*SF);
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.eastLon, false) : 'E - 079° 14\' 16.28"', p.x + 8*SF, p.y + 7*SF); }
+  if (sP) { const p = meterToPixel(sP.x, sP.y); ctx.textAlign = 'center';
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.southLat, true) : 'N - 21° 31\' 29.21"', p.x, p.y + 18*SF);
+    ctx.fillText(geoRef.hasGeo ? toDMS(geoRef.centerLon, false) : 'E - 079° 13\' 50.54"', p.x, p.y + 30*SF); }
+}
+
+function drawUserPin() {
+  const p = meterToPixel(userLocation.mx, userLocation.my);
+  ctx.beginPath(); ctx.arc(p.x, p.y, 16*SF, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(37,99,235,0.2)'; ctx.fill();
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1.5*SF; ctx.stroke();
+  ctx.beginPath(); ctx.arc(p.x, p.y, 6*SF, 0, Math.PI*2);
+  ctx.fillStyle = '#1d4ed8'; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2*SF; ctx.stroke();
+  const label = `📍 ${getGridBlockName(userLocation.mx, userLocation.my)}`;
+  ctx.font = `bold ${11*SF}px ${mapStyle.fontFamily}`;
+  const w = ctx.measureText(label).width;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(p.x - w/2 - 8*SF, p.y - 34*SF, w + 16*SF, 22*SF);
+  ctx.strokeStyle = '#fff';
+  ctx.strokeRect(p.x - w/2 - 8*SF, p.y - 34*SF, w + 16*SF, 22*SF);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+  ctx.fillText(label, p.x, p.y - 19*SF);
+}
+
+// ---------- LEGEND ----------
+function legendHeight() {
+  const existingRows = displayState.showBaseline ? 4 : 3;
+  const featureRows = allFeatures().filter(f => f.enabled).length;
+  return (68 + (existingRows + featureRows) * 21 + 18) * SF;
+}
+function getLegendBasePosition() {
+  const pos = selectLegendPos.value;
+  const w = 195*SF;
+  let baseX = mapBounds.right - w - 8*SF, baseY = mapBounds.top + 10*SF;
+  if (pos === 'top_left') { baseX = mapBounds.left + 8*SF; baseY = mapBounds.top + 10*SF; }
+  if (pos === 'bottom_right') { baseX = mapBounds.right - w - 8*SF; baseY = mapBounds.bottom - legendHeight() - 10*SF; }
+  return { x: baseX, y: baseY };
+}
+function getLegendRect() {
+  const base = getLegendBasePosition();
+  return { x: base.x + legendOffset.x, y: base.y + legendOffset.y, w: 195*SF, h: legendHeight() };
+}
+function drawSolidLegendBox() {
+  const r = getLegendRect();
+  ctx.fillStyle = '#fff'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.4*SF; ctx.strokeRect(r.x, r.y, r.w, r.h);
+  const nx = r.x + 28*SF, ny = r.y + 30*SF;
+  ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.8*SF;
+  ctx.beginPath(); ctx.moveTo(nx, ny+14*SF); ctx.lineTo(nx, ny-14*SF); ctx.stroke();
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath(); ctx.moveTo(nx, ny-16*SF); ctx.lineTo(nx-5*SF, ny-5*SF); ctx.lineTo(nx+5*SF, ny-5*SF); ctx.closePath(); ctx.fill();
+  ctx.font = `bold ${12*SF}px ${mapStyle.fontFamily}`; ctx.textAlign = 'center';
+  ctx.fillText(t('north_arrow'), nx, ny - 19*SF);
+  ctx.textAlign = 'left';
+  ctx.font = `bold ${11*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillText(`${t('pdf_scale')}: ${activeScale.name}`, r.x + 54*SF, r.y + 22*SF);
+  ctx.font = `bold ${12*SF}px ${mapStyle.fontFamily}`;
+  ctx.fillStyle = mapStyle.textColor;
+  ctx.fillText(t('legend'), r.x + 54*SF, r.y + 40*SF);
+  ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1*SF;
+  ctx.beginPath(); ctx.moveTo(r.x+6*SF, r.y+48*SF); ctx.lineTo(r.x+r.w-6*SF, r.y+48*SF); ctx.stroke();
+
+  const rowH = 21*SF;
+  let y = r.y + 68*SF;
+  ctx.font = `${fontSizePx()*SF}px ${mapStyle.fontFamily}`;
+  const rows = [
+    { l:t('legend_boundary'), f:'#000', s:'#000' },
+    { l:t('legend_grid'), f:'#0284c7', s:'#0284c7' },
+    { l:t('legend_non_working'), f:'#fef3c7', s:'#d97706' }
+  ];
+  if (displayState.showBaseline) rows.splice(1, 0, { l:t('legend_baseline'), f:'#dc2626', s:'#dc2626' });
+
+  rows.forEach(row => {
+    ctx.fillStyle = mapStyle.textColor; ctx.textAlign = 'left';
+    ctx.fillText(truncateText(ctx, row.l, r.w - 58*SF), r.x + 10*SF, y);
+    ctx.fillStyle = row.f; ctx.fillRect(r.x+r.w-42*SF, y-8*SF, 30*SF, 10*SF);
+    ctx.strokeStyle = row.s; ctx.strokeRect(r.x+r.w-42*SF, y-8*SF, 30*SF, 10*SF);
+    y += rowH;
+  });
+
+  const feats = allFeatures().filter(f => f.enabled);
+  if (feats.length) {
+    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1*SF;
+    ctx.beginPath(); ctx.moveTo(r.x+6*SF, y-8*SF); ctx.lineTo(r.x+r.w-6*SF, y-8*SF); ctx.stroke();
+    y += 4*SF;
+    feats.forEach(f => {
+      ctx.font = `${fontSizePx()*SF}px ${mapStyle.fontFamily}`;
+      ctx.fillStyle = mapStyle.textColor; ctx.textAlign = 'left';
+      ctx.fillText(truncateText(ctx, getFeatureLabel(f), r.w - 62*SF), r.x + 10*SF, y);
+      drawFeatureSymbol(ctx, f.symbol, r.x + r.w - 27*SF, y - 3*SF, 6*SF, f.color);
+      y += rowH;
+    });
+  }
+}
+function isPointInLegend(px, py) {
+  const r = getLegendRect();
+  return px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+}
+
+function drawOfficialSignatures() {
+  const fy = mapBounds.bottom + 42*SF;
+  [
+    { x: mapBounds.left + 90*SF, title: t('forest_guard'), name: inputVanrakshak.value.trim() || '—', j: inputBeat.value ? `${t('beat')}: ${inputBeat.value}` : t('beat') },
+    { x: canvas.width/2, title: t('forest_beat_officer'), name: inputVanpal.value.trim() || '—', j: inputRound.value ? `${t('round')}: ${inputRound.value}` : t('round') },
+    { x: mapBounds.right - 90*SF, title: t('rfo'), name: inputRFO.value.trim() || '—', j: inputRange.value ? `${t('range')}: ${inputRange.value}` : t('range') }
+  ].forEach(c => {
+    ctx.textAlign = 'center'; ctx.fillStyle = mapStyle.textColor;
+    ctx.font = `bold ${13*SF}px ${mapStyle.fontFamily}`;
+    ctx.fillText(c.title, c.x, fy);
+    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1*SF;
+    ctx.beginPath(); ctx.moveTo(c.x-75*SF, fy+28*SF); ctx.lineTo(c.x+75*SF, fy+28*SF); ctx.stroke();
+    ctx.fillStyle = '#1e293b';
+    ctx.font = `${11*SF}px ${mapStyle.fontFamily}`;
+    ctx.fillText(c.name, c.x, fy + 22*SF);
+    ctx.fillStyle = '#475569';
+    ctx.font = `bold ${10.5*SF}px ${mapStyle.fontFamily}`;
+    ctx.fillText(c.j, c.x, fy + 44*SF);
+  });
+}
+
+// ============ ACCURACY TRACKER ============
+function resetAccuracy() {
+  accuracyBadge.textContent = 'Not checked';
+  accuracyBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600';
+  accuracyResults.innerHTML = '<div class="text-slate-400 italic">Load a map to run checks.</div>';
+}
+function runAccuracyCheck() {
+  if (workingBoundaryPoints.length < 3) {
+    accuracyResults.innerHTML = '<div class="text-rose-600 font-bold">⚠ No working area loaded. Import a KML/KMZ file or load the sample map first.</div>';
+    accuracyBadge.textContent = 'Cannot check';
+    accuracyBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-rose-200 text-rose-800';
+    return;
+  }
+  const checks = [];
+  const declaredMeters = activeScale.metersPerGridCell;
+  const declaredPx = activeScale.gridStepPx;
+  const pxPerMeter = declaredPx / declaredMeters;
+  const expectedPxPer100m = activeScale.pxPer100m;
+  const scaleDeviation = Math.abs((pxPerMeter * 100) - expectedPxPer100m) / expectedPxPer100m;
+  checks.push({
+    label: 'Scale consistency (grid vs scale bar)',
+    pass: scaleDeviation < 0.02,
+    detail: `Grid step: ${declaredMeters} m = ${Math.round(declaredPx)} px · Deviation: ${(scaleDeviation*100).toFixed(2)}%`
+  });
+  const bl = computeBaseline();
+  if (bl && bl.p1 && bl.p2) {
+    const bearing = bl.bearingDeg;
+    const isGridParallel = Math.abs(bearing - 90) < 2 || Math.abs(bearing - 270) < 2;
+    checks.push({
+      label: 'Baseline alignment',
+      pass: isGridParallel || document.querySelector('input[name="baselineOption"]:checked').value === 'longest_axis',
+      detail: `Bearing: ${Math.round(bearing)}° ${bearingToCompass(bearing)}`
+    });
+  } else {
+    checks.push({ label: 'Baseline alignment', pass: false, detail: 'No baseline could be computed.' });
+  }
+  const legendRect = getLegendRect();
+  const legendInBounds = legendRect.x >= mapBounds.left && legendRect.x + legendRect.w <= mapBounds.right &&
+                         legendRect.y >= mapBounds.top && legendRect.y + legendRect.h <= mapBounds.bottom;
+  checks.push({
+    label: 'Legend placed inside map frame',
+    pass: legendInBounds,
+    detail: legendInBounds ? 'Legend is within the map area.' : 'Legend is partially outside — drag it back into the frame.'
+  });
+  checks.push({ label: 'Scale bar present', pass: true, detail: `Legend shows: "${t('pdf_scale')}: ${activeScale.name}"` });
+  checks.push({ label: 'North arrow present', pass: true, detail: 'North arrow drawn inside legend box.' });
+  const kmlArea = calcAreaHa(workingBoundaryPoints);
+  const stepMeters = activeScale.metersPerGridCell;
+  const cellsInside = cellLabelMap.size;
+  const gridAreaHa = (cellsInside * stepMeters * stepMeters) / 10000;
+  const areaDiffPct = kmlArea > 0 ? Math.abs(gridAreaHa - kmlArea) / kmlArea * 100 : 0;
+  checks.push({
+    label: 'Grid area covers KML boundary (centre-inside)',
+    pass: areaDiffPct < 20,
+    detail: `KML area: ${kmlArea.toFixed(2)} Ha · Grid area: ${gridAreaHa.toFixed(2)} Ha · Diff: ${areaDiffPct.toFixed(1)}% (${cellsInside} cells numbered)`
+  });
+  const hasComp = inputComp.value.trim().length > 0;
+  const hasRange = inputRange.value.trim().length > 0;
+  const hasBeat = inputBeat.value.trim().length > 0;
+  const headerOk = hasComp && hasRange && hasBeat;
+  checks.push({
+    label: 'Header fields (Compartment, Range, Beat)',
+    pass: headerOk,
+    detail: headerOk ? 'All required fields filled.' : 'Missing: ' + [!hasComp&&'Compartment', !hasRange&&'Range', !hasBeat&&'Beat'].filter(Boolean).join(', ')
+  });
+  const dateOk = !!inputMapDate.value;
+  checks.push({
+    label: 'Preparation date present', pass: dateOk,
+    detail: dateOk ? `Date: ${getFormattedDate()}` : 'Date field is empty.'
+  });
+  const sigOk = inputVanrakshak.value.trim() && inputVanpal.value.trim() && inputRFO.value.trim();
+  checks.push({
+    label: 'All three signatures filled', pass: !!sigOk,
+    detail: sigOk ? 'Forest Guard, Beat Officer, and RFO names present.' : 'One or more signature fields are empty.'
+  });
+  const passed = checks.filter(c => c.pass).length;
+  const total = checks.length;
+  const allPass = passed === total;
+  accuracyBadge.textContent = allPass ? '✓ Map looks good' : `${passed}/${total} checks passed`;
+  accuracyBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold ' +
+    (allPass ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-200 text-amber-800');
+  accuracyResults.innerHTML = checks.map(c => {
+    const icon = c.pass ? '✅' : '❌';
+    const color = c.pass ? 'text-emerald-700' : 'text-rose-700';
+    return `<div class="flex items-start gap-1.5 ${color}">
+      <span class="flex-shrink-0">${icon}</span>
+      <div><span class="font-semibold">${c.label}</span><br><span class="text-slate-500 text-[10px]">${c.detail}</span></div>
+    </div>`;
+  }).join('');
+}
+btnRunAccuracy.addEventListener('click', runAccuracyCheck);
+
+// ============ GUIDELINES ============
+const GUIDELINES = [
+  { title:'1. Scale and Grid', items:[
+    'Treatment maps are conventionally prepared on graph paper at 1:5000 scale. You may also select a custom scale (e.g. 1 cm = 75 m) for larger or smaller compartments.',
+    'The coupe area is divided into grids of 100 m × 100 m (1 ha). Where plantation is prescribed in understocked areas, grids may be 100 m × 50 m (0.5 ha).',
+    'A baseline should, as far as possible, run through the centre of the section. Grid lines must be shown on the map and grids numbered.',
+    'A grid cell is numbered only when its centre lies inside the compartment boundary; boundary slivers are not numbered.'
+  ]},
+  { title:'2. Treatment Categories to Mark', items:[
+    '**Category A — Protection Area:** Slopes above 25°; 20 m wide strips on both sides of watercourses/nalas; heavily eroded areas. No felling is prescribed.',
+    '**Category B — Understocked Area:** Crown density below 0.4, including blank areas. Minimum patch size for mapping is generally 0.5–2 ha.',
+    '**Category C — Old Plantations:** Groups of young poles or old plantations (minimum 1 ha patch, ~30% survival).',
+    '**Category D — Well-stocked Area:** Crown density above 0.4; areas fit for plantation or overwood removal.'
+  ]},
+  { title:'3. Cartographic Elements (Must Be Present)', items:[
+    '**North arrow** — orientation indicator, usually placed inside or adjacent to the legend.',
+    '**Scale bar** — graphical and/or numeric scale; must match the declared scale.',
+    '**Legend** — explains all symbols, colours, and line types used on the map.',
+    '**Title and administration block** — Forest Division, Range, Round, Beat, Compartment No., and date.',
+    '**Signatures** — Forest Guard, Beat Officer, and Range Forest Officer.'
+  ]},
+  { title:'4. Accuracy and Verification', items:[
+    'The treatment map should be prepared by the Range Forest Officer and verified by the Assistant Conservator of Forests before approval.',
+    'Field demarcation must be completed and verified on the ground before finalising the map.',
+    'For GPS/GIS-based boundaries, DGPS accuracy within 25 cm is the FSI standard; handheld GPS is for reconnaissance only.'
+  ]},
+  { title:'5. Practical Checks Before Printing', items:[
+    'The numbered grid area should match the KML boundary area within ~20%; a much larger gap indicates grid misalignment or a wrong grid size.',
+    'The baseline should be clearly drawn with P-1 (start) and P-2 (end) markers.',
+    'The legend must sit fully inside the map frame and must show scale, north arrow, and all symbol explanations.',
+    'Area figures (Total, Treatment, Non-Treatment) should be arithmetically consistent.',
+    'All three signature fields should be filled before the map is considered ready for PDF export.'
+  ]}
+];
+function renderGuidelines() {
+  guidelinesContent.innerHTML = GUIDELINES.map(section => `
+    <div>
+      <h4 class="font-bold text-sm text-emerald-900 mb-2">${section.title}</h4>
+      <ul class="list-disc list-inside space-y-1.5 text-slate-700">
+        ${section.items.map(item => `<li>${item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+}
+
+// ============ UI LANGUAGE ============
+function updateUIForLanguage() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (el.tagName === 'OPTION') return;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      if (el.hasAttribute('data-i18n-placeholder')) el.placeholder = t(k);
+    } else el.textContent = t(k);
+  });
+  document.querySelectorAll('option[data-i18n-option]').forEach(el => el.textContent = t(el.getAttribute('data-i18n-option')));
+  gpsBtnText.textContent = t('gps_find');
+  badgeScale.textContent = `${t('pdf_scale')}: ${activeScale.name}`;
+  coordDisplay.textContent = 'Hover or click on map...';
+  buildDisplayOptions();
+  renderFeatureList();
+  renderMap();
+}
+
+document.getElementById('selectLanguage').addEventListener('change', e => {
+  currentLang = e.target.value;
+  // language-aware font
+  const font = getFontForLang(currentLang);
+  document.body.style.fontFamily = font;
+  mapStyle.fontFamily = font;
+  updateUIForLanguage();
+  showToast(t('toast_success'));
+});
+
+// ============ EVENT HANDLERS ============
+selectScale.addEventListener('change', e => {
+  const isCustom = e.target.value === 'custom';
+  customScaleFields.classList.toggle('hidden', !isCustom);
+  rebuildActiveScale();
+  showToast(t('toast_scale_changed').replace('{scale}', activeScale.name));
+});
+inputCustomScaleCm.addEventListener('change', () => {
+  if (selectScale.value === 'custom') { rebuildActiveScale(); showToast(t('toast_scale_changed').replace('{scale}', activeScale.name)); }
+});
+inputCustomScaleM.addEventListener('change', () => {
+  if (selectScale.value === 'custom') { rebuildActiveScale(); showToast(t('toast_scale_changed').replace('{scale}', activeScale.name)); }
+});
+
+selectLegendPos.addEventListener('change', () => { legendOffset = { x: 0, y: 0 }; renderMap(); resetAccuracy(); });
+selectTreatmentType.addEventListener('change', () => {
+  customTreatmentWrap.classList.toggle('hidden', selectTreatmentType.value !== 'custom');
+  renderMap(); resetAccuracy();
+});
+inputCustomTreatmentType.addEventListener('input', () => { renderMap(); resetAccuracy(); });
+
+selectGridSize.addEventListener('change', e => {
+  if (e.target.value === 'custom') customGridFields.classList.remove('hidden');
+  else {
+    customGridFields.classList.add('hidden');
+    const [w, h] = e.target.value.split('x').map(Number);
+    inputGridWidth.value = w; inputGridHeight.value = h;
+  }
+  applyGridSizeToScale();
+  resetAccuracy();
+  renderMap();
+});
+inputGridWidth.addEventListener('change', () => { applyGridSizeToScale(); resetAccuracy(); renderMap(); });
+inputGridHeight.addEventListener('change', () => {});
+
+document.querySelectorAll('input[name="orientation"]').forEach(r => r.addEventListener('change', () => {
+  panOffset = { x: 0, y: 0 }; legendOffset = { x: 0, y: 0 };
+  updateCanvasDimensions(); repositionBaseOrigin(); updateTransformInfo(); resetAccuracy(); renderMap();
+}));
+document.querySelectorAll('input[name="baselineOption"]').forEach(r => r.addEventListener('change', () => {
+  autoAlignToLongestDistance(); updateTransformInfo(); resetAccuracy();
+}));
+
+selectFontSize.addEventListener('change', e => { mapStyle.fontSize = e.target.value; renderMap(); });
+inputTextColor.addEventListener('input', e => { mapStyle.textColor = e.target.value; renderMap(); });
+selectFontFamily.addEventListener('change', e => { mapStyle.fontFamily = e.target.value; renderMap(); });
+
+$('btnAddCustomFeature').addEventListener('click', () => {
+  const name = $('inputCustomFeatureName').value.trim();
+  if (!name) { showToast(t('enter_feature_name')); return; }
+  const symbol = $('selectCustomFeatureSymbol').value;
+  const color = $('inputCustomFeatureColor').value;
+  customFeatures.push({
+    id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    label: name, symbol, color, enabled: true, markers: [], custom: true
+  });
+  $('inputCustomFeatureName').value = '';
+  renderFeatureList(); renderMap(); resetAccuracy();
+  showToast(t('custom_added'));
+});
+$('btnClearFeatureMarkers').addEventListener('click', () => {
+  allFeatures().forEach(f => { f.markers = []; });
+  renderMap(); resetAccuracy();
+  showToast(t('markers_cleared'));
+});
+$('btnCancelPlaceMode').addEventListener('click', () => {
+  placeModeFeatureId = null;
+  renderFeatureList();
+  canvas.style.cursor = 'grab';
+  showToast(t('placement_cancelled'));
+});
+
+// ============ MAP DRAG / ROTATE / LEGEND DRAG ============
+function getCanvasPoint(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+  return { px: (e.clientX - rect.left) * sx, py: (e.clientY - rect.top) * sy };
+}
+function getPivotPixel() { return { x: baseOrigin.x + panOffset.x, y: baseOrigin.y + panOffset.y }; }
+function updateTransformInfo() {
+  const el = $('transformInfo');
+  if (!el) return;
+  const dx = (panOffset.x / CM_PX).toFixed(2);
+  const dy = (-panOffset.y / CM_PX).toFixed(2);
+  el.textContent = `Δ ${dx}, ${dy} cm · ${Math.round(currentRotationDeg)}°`;
+}
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('pointerdown', e => {
+  const { px, py } = getCanvasPoint(e);
+  if (isPointInLegend(px, py)) {
+    legendDragState = { startX: px, startY: py, startOffset: { ...legendOffset } };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    canvas.style.cursor = 'move';
+    e.preventDefault();
+    return;
+  }
+  if (placeLocationMode) {
+    const m = pixelToMeter(px, py);
+    userLocation = { mx: m.mx, my: m.my, accuracy: 0 };
+    const block = getGridBlockName(m.mx, m.my);
+    gridLocationStatus.innerHTML = `Pin placed at grid <strong class="text-blue-900">${block}</strong>.`;
+    placeLocationMode = false;
+    btnPlaceLocation.textContent = 'Click map to place pin';
+    btnPlaceLocation.classList.remove('bg-blue-700','text-white');
+    btnPlaceLocation.classList.add('text-blue-700');
+    canvas.style.cursor = 'grab';
+    renderMap();
+    e.preventDefault();
+    return;
+  }
+  if (workingBoundaryPoints.length < 3) return;
+  if (placeModeFeatureId) {
+    const f = getFeatureById(placeModeFeatureId);
+    if (f) {
+      const m = pixelToMeter(px, py);
+      f.markers.push({ mx: m.mx, my: m.my });
+      placeModeFeatureId = null;
+      renderFeatureList(); renderMap(); resetAccuracy();
+      showToast(`Placed: ${getFeatureLabel(f)}`);
+    }
+    canvas.style.cursor = 'grab';
+    e.preventDefault();
+    return;
+  }
+  const rotating = e.shiftKey || e.button === 2;
+  if (rotating) {
+    const c = getPivotPixel();
+    dragState = { mode: 'rotate', startAngle: Math.atan2(py - c.y, px - c.x), startRot: currentRotationDeg };
+  } else {
+    dragState = { mode: 'move', startX: px, startY: py, startPan: { ...panOffset } };
+  }
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  canvas.style.cursor = rotating ? 'crosshair' : 'grabbing';
+  e.preventDefault();
+});
+
+canvas.addEventListener('pointermove', e => {
+  const { px, py } = getCanvasPoint(e);
+  if (legendDragState) {
+    legendOffset.x = legendDragState.startOffset.x + (px - legendDragState.startX);
+    legendOffset.y = legendDragState.startOffset.y + (py - legendDragState.startY);
+    renderMap();
+    return;
+  }
+  if (dragState) {
+    if (dragState.mode === 'move') {
+      panOffset.x = dragState.startPan.x + (px - dragState.startX);
+      panOffset.y = dragState.startPan.y + (py - dragState.startY);
+      renderMap(); updateTransformInfo();
+    } else {
+      const c = getPivotPixel();
+      const ang = Math.atan2(py - c.y, px - c.x);
+      let delta = (ang - dragState.startAngle) * 180 / Math.PI;
+      let newRot = dragState.startRot + delta;
+      if (e.altKey) newRot = Math.round(newRot / 5) * 5;
+      applyRotation(newRot);
+      updateTransformInfo();
+    }
+    return;
+  }
+  if (placeLocationMode || placeModeFeatureId) canvas.style.cursor = 'crosshair';
+  else if (isPointInLegend(px, py)) canvas.style.cursor = 'move';
+  else canvas.style.cursor = 'grab';
+  const m = pixelToMeter(px, py);
+  const block = getGridBlockName(m.mx, m.my);
+  const inside = isPointInPolygon({ x: m.mx, y: m.my }, workingBoundaryPoints);
+  coordDisplay.textContent = `${t('pdf_grid_name')}: ${block} (${inside?'inside':'outside'}) | X=${Math.round(m.mx)} m, Y=${Math.round(m.my)} m`;
+});
+
+['pointerup','pointercancel'].forEach(ev => canvas.addEventListener(ev, e => {
+  if (legendDragState) {
+    legendDragState = null; canvas.style.cursor = 'grab';
+    try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    resetAccuracy();
+    return;
+  }
+  if (!dragState) return;
+  dragState = null; canvas.style.cursor = 'grab';
+  try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+  updateTransformInfo();
+  resetAccuracy();
+}));
+
+canvas.addEventListener('pointerleave', () => {
+  if (!dragState && !legendDragState) coordDisplay.textContent = 'Hover or click on map...';
+});
+
+$('btnResetTransform').addEventListener('click', () => {
+  panOffset = { x: 0, y: 0 };
+  applyRotation(0);
+  updateTransformInfo();
+  resetAccuracy();
+  showToast(t('toast_transform_reset'));
+});
+$('btnResetLegend').addEventListener('click', () => {
+  legendOffset = { x: 0, y: 0 };
+  renderMap(); resetAccuracy();
+  showToast('Legend reset to default position.');
+});
+
+function openGuidelines() { renderGuidelines(); guidelinesModal.classList.remove('hidden'); }
+$('btnCloseGuidelines').addEventListener('click', () => guidelinesModal.classList.add('hidden'));
+$('btnCloseGuidelines2').addEventListener('click', () => guidelinesModal.classList.add('hidden'));
+guidelinesModal.addEventListener('click', e => { if (e.target === guidelinesModal) guidelinesModal.classList.add('hidden'); });
+
+(function addGuidelinesButton() {
+  const header = document.querySelector('header .flex.flex-wrap.items-center.gap-2');
+  if (header) {
+    const btn = document.createElement('button');
+    btn.id = 'btnGuidelines';
+    btn.className = 'px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-bold transition flex items-center gap-1.5 shadow-sm';
+    btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg> Guidelines';
+    btn.addEventListener('click', openGuidelines);
+    header.prepend(btn);
+  }
+})();
+
+// ============ GPS + CLICK-TO-PLACE ============
+btnPlaceLocation.addEventListener('click', () => {
+  if (workingBoundaryPoints.length < 3) { showToast(t('toast_please_load_map')); return; }
+  placeLocationMode = !placeLocationMode;
+  if (placeLocationMode) {
+    btnPlaceLocation.classList.add('bg-blue-700','text-white');
+    btnPlaceLocation.classList.remove('text-blue-700');
+    btnPlaceLocation.textContent = 'Click on map…';
+    canvas.style.cursor = 'crosshair';
+    showToast('Click on the treatment map to place the location pin.');
+  } else {
+    btnPlaceLocation.classList.remove('bg-blue-700','text-white');
+    btnPlaceLocation.classList.add('text-blue-700');
+    btnPlaceLocation.textContent = 'Click map to place pin';
+    canvas.style.cursor = 'grab';
+    showToast('Place-pin mode off.');
+  }
+});
+
+btnGPS.addEventListener('click', () => {
+  if (isWatchingGPS) {
+    if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null; isWatchingGPS = false;
+    gpsBtnText.textContent = t('gps_find');
+    gridLocationStatus.textContent = 'GPS tracking stopped.';
+    userLocation = null; renderMap(); return;
+  }
+  if (!('geolocation' in navigator)) { showToast(t('gps_not_available')); return; }
+  gpsBtnText.textContent = t('gps_finding');
+  gridLocationStatus.innerHTML = `<span class="text-blue-600 animate-pulse">${t('gps_wait')}</span>`;
+  gpsWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      isWatchingGPS = true;
+      gpsBtnText.textContent = t('gps_stop');
+      const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = Math.round(pos.coords.accuracy);
+      if (!geoRef.hasGeo) { gridLocationStatus.innerHTML = `GPS (${lat.toFixed(4)}, ${lon.toFixed(4)}) — no map loaded.`; return; }
+      const latM = 111320, lonM = 111320 * Math.cos(geoRef.centerLat * Math.PI / 180);
+      let mx = (lon - geoRef.centerLon) * lonM, my = (lat - geoRef.centerLat) * latM;
+      const rad = -currentRotationDeg * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad);
+      const rMx = mx*cos - my*sin, rMy = mx*sin + my*cos;
+      userLocation = { mx: rMx, my: rMy, lat, lon, accuracy: acc };
+      const inside = isPointInPolygon({ x: rMx, y: rMy }, workingBoundaryPoints);
+      const gridName = getGridBlockName(rMx, rMy);
+      if (inside) {
+        gridLocationStatus.innerHTML = `<div class="bg-emerald-100 border border-emerald-400 p-2 rounded text-emerald-900 font-bold">✅ ${t('gps_inside').replace('{grid}', gridName)} <span class="text-xs font-normal">(±${acc} m)</span></div>`;
+        showToast(t('gps_inside').replace('{grid}', gridName));
+      } else {
+        gridLocationStatus.innerHTML = `<div class="bg-rose-100 border border-rose-400 p-2 rounded text-rose-900 font-bold">❌ ${t('gps_outside')} <span class="text-xs font-normal">(±${acc} m)</span></div>`;
+      }
+      renderMap();
+    },
+    err => {
+      gpsBtnText.textContent = t('gps_find');
+      let msg = 'GPS error.';
+      if (err.code === 1) msg = t('gps_permission');
+      if (err.code === 2) msg = t('gps_no_signal');
+      if (err.code === 3) msg = t('gps_timeout');
+      gridLocationStatus.innerHTML = `<span class="text-rose-600">${msg}</span>`;
+      showToast(msg);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+});
+
+btnSimulateGPS.addEventListener('click', () => {
+  if (!geoRef.hasGeo) { showToast(t('toast_please_load_map')); return; }
+  userLocation = { mx: 0, my: 0, lat: geoRef.centerLat, lon: geoRef.centerLon, accuracy: 5 };
+  const block = getGridBlockName(0, 0);
+  gridLocationStatus.innerHTML = `Simulated: grid <strong class="text-blue-900">${block}</strong>.`;
+  showToast(t('toast_location_set').replace('{grid}', block));
+  renderMap();
+});
+
+btnClearGPS.addEventListener('click', () => {
+  if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = null; isWatchingGPS = false;
+  gpsBtnText.textContent = t('gps_find');
+  userLocation = null;
+  placeLocationMode = false;
+  btnPlaceLocation.textContent = 'Click map to place pin';
+  btnPlaceLocation.classList.remove('bg-blue-700','text-white');
+  btnPlaceLocation.classList.add('text-blue-700');
+  canvas.style.cursor = 'grab';
+  gridLocationStatus.textContent = 'Click on any grid on the map or tap GPS button.';
+  renderMap();
+});
+
+// ============ PDF (STRICT SCALE + AUTO PAPER) ============
+const PAPER_SIZES = [
+  { name:'a4', w:210, h:297 },
+  { name:'a3', w:297, h:420 },
+  { name:'a2', w:420, h:594 },
+  { name:'a1', w:594, h:841 },
+  { name:'a0', w:841, h:1189 }
+];
+function getStrictFrame() {
+  const left = Math.max(0, mapBounds.left - 24*SF);
+  const top = Math.max(0, mapBounds.top - 84*SF);
+  const right = Math.min(canvas.width, mapBounds.right + 24*SF);
+  const bottom = Math.min(canvas.height, mapBounds.bottom + 100*SF);
+  return { x: left, y: top, w: right - left, h: bottom - top };
+}
+function choosePaper(wmm, hmm, margin = 6) {
+  for (const p of PAPER_SIZES) {
+    if (wmm + 2*margin <= p.w && hmm + 2*margin <= p.h) return { ...p, orientation:'portrait' };
+    if (wmm + 2*margin <= p.h && hmm + 2*margin <= p.w) return { ...p, orientation:'landscape' };
+  }
+  const p = PAPER_SIZES[PAPER_SIZES.length - 1];
+  return { ...p, orientation: wmm > hmm ? 'landscape' : 'portrait', overflow: true };
+}
+function updatePaperBadge() {
+  if (!badgePaper) return;
+  const f = getStrictFrame();
+  if (f.w <= 0 || f.h <= 0) return;
+  const wmm = f.w / MM_PX, hmm = f.h / MM_PX;
+  const p = choosePaper(wmm, hmm, 6);
+  badgePaper.textContent = `PDF: ${p.name.toUpperCase()} ${p.orientation === 'landscape' ? 'L' : 'P'}`;
+}
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const frame = getStrictFrame();
+  if (frame.w <= 0 || frame.h <= 0) { showToast(t('toast_please_load_map')); return; }
+  const wmm = frame.w / MM_PX;
+  const hmm = frame.h / MM_PX;
+  const paper = choosePaper(wmm, hmm, 6);
+  const pdf = new jsPDF({ orientation: paper.orientation, unit: 'mm', format: paper.name });
+  const off = document.createElement('canvas');
+  off.width = frame.w;
+  off.height = frame.h;
+  const octx = off.getContext('2d');
+  octx.drawImage(canvas, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h);
+  const img = off.toDataURL('image/png', 1.0);
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  let drawW = wmm, drawH = hmm;
+  if (paper.overflow) {
+    const s = Math.min((pageW - 12) / wmm, (pageH - 12) / hmm);
+    drawW = wmm * s;
+    drawH = hmm * s;
+  }
+  const x = (pageW - drawW) / 2;
+  const y = (pageH - drawH) / 2;
+  pdf.addImage(img, 'PNG', x, y, drawW, drawH);
+  const comp = (inputComp.value || 'Forest_Compartment').replace(/\s+/g, '_');
+  pdf.save(`Treatment_Map_${comp}_${paper.name.toUpperCase()}.pdf`);
+  showToast(`PDF downloaded (${paper.name.toUpperCase()} ${paper.orientation}, strict scale).`);
+}
+btnExportPDF.addEventListener('click', () => {
+  try { exportPDF(); } catch (err) { showToast(t('toast_pdf_error') + err.message); }
+});
+
+btnShareWhatsApp.addEventListener('click', () => {
+  const comp = inputComp.value || 'Compartment';
+  shareSummaryText.textContent = `${t('compartment_no')}: ${comp} | ${t('range')}: ${inputRange.value||'-'} | ${t('round')}: ${inputRound.value||'-'} | ${t('beat')}: ${inputBeat.value||'-'} | ${t('work_area')}: ${inputWorkArea.value||'-'} Ha`;
+  shareModal.classList.remove('hidden');
+});
+btnCloseShareModal.addEventListener('click', () => shareModal.classList.add('hidden'));
+btnDirectPDFSave.addEventListener('click', () => { btnExportPDF.click(); shareModal.classList.add('hidden'); });
+btnDownloadAndWhatsApp.addEventListener('click', () => {
+  btnExportPDF.click();
+  const text = encodeURIComponent(`🌲 Forest Treatment Map\n${t('compartment_no')}: ${inputComp.value||''}\n${t('range')}: ${inputRange.value||''} | ${t('beat')}: ${inputBeat.value||''}\n${t('work_area')}: ${inputWorkArea.value||''} Ha`);
+  window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  shareModal.classList.add('hidden');
+});
+
+// ============ LIVE FIELD UPDATES ============
+[inputTreatmentTitle, inputDivision, inputSubDivision, inputRange, inputRound,
+ inputBeat, inputComp, inputMapDate, inputWorkArea, inputNonWorkArea,
+ inputVanrakshak, inputVanpal, inputRFO].forEach(el => {
+  el.addEventListener('input', () => { if (el === inputWorkArea || el === inputNonWorkArea) recalcTotalArea(); renderMap(); resetAccuracy(); });
+  el.addEventListener('change', () => { if (el === inputWorkArea || el === inputNonWorkArea) recalcTotalArea(); renderMap(); resetAccuracy(); });
+});
+
+// ============ BOOT ============
+updateCanvasDimensions();
+applyGridSizeToScale();
+buildDisplayOptions();
+renderFeatureList();
+document.body.style.fontFamily = getFontForLang(currentLang);
+mapStyle.fontFamily = getFontForLang(currentLang);
+updateUIForLanguage();
+updateTransformInfo();
+renderGuidelines();
+renderMap();
+</script>
+
+<footer class="bg-white border-t border-slate-200 py-2.5 px-4 text-center text-xs text-slate-500 mt-auto">
+  Developed by <strong class="text-slate-800">Govind Mendhe</strong> • <a href="mailto:govind.mendhe@gmail.com" class="text-emerald-700 hover:underline">govind.mendhe@gmail.com</a>
+</footer>
+
+</body>
+</html>
