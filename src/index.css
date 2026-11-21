@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --forest-canvas: #ebf2ec;
+    --forest-surface: #f4f8f5;
+    --forest-tile: #ffffff;
+    --forest-border: #d3e2d7;
+    --forest-canopy: #0b3527;
+    --forest-pine: #0f5132;
+    --forest-ink: #10251c;
+  }
+
+  html,
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--forest-canvas);
+    color: var(--forest-ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Subtle Survey-of-India topographic contour backdrop for authentic forest field ambience */
+  .forest-topo-bg {
+    background-color: #eaf1ec;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(16, 112, 74, 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 92% 100%, rgba(180, 134, 58, 0.07) 0%, transparent 42%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23124a34' stroke-opacity='0.055' stroke-width='1'%3E%3Cpath d='M-20 42 C 25 18, 72 68, 124 38 C 168 12, 202 44, 240 28'/%3E%3Cpath d='M-20 96 C 32 70, 88 122, 136 90 C 176 64, 206 96, 240 82'/%3E%3Cpath d='M-20 156 C 28 134, 78 182, 132 150 C 174 126, 208 158, 240 144'/%3E%3Cpath d='M-20 206 C 36 184, 92 224, 146 196 C 184 178, 212 204, 240 192'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Deep Pench forest canopy header surface with subtle contour grain */
+  .forest-canopy-header {
+    background-color: #082d22;
+    background-image:
+      linear-gradient(110deg, #07291f 0%, #0d3e2e 52%, #144d38 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='90' viewBox='0 0 180 90'%3E%3Cg fill='none' stroke='%23a7f3d0' stroke-opacity='0.07' stroke-width='1'%3E%3Cpath d='M-10 22 C 35 6, 70 38, 118 20 C 150 8, 170 26, 195 16'/%3E%3Cpath d='M-10 58 C 40 42, 82 74, 130 56 C 158 46, 174 62, 195 52'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Warm sage drafting desk behind the crisp A4 printed map sheet */
+  .forest-desk-bg {
+    background-color: #e3ece5;
+    background-image:
+      radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.45) 0%, rgba(15, 76, 54, 0.04) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23144a35' stroke-opacity='0.045' stroke-width='1'%3E%3Cpath d='M-10 38 C 30 16, 70 62, 114 34 C 138 20, 152 38, 172 28'/%3E%3Cpath d='M-10 116 C 34 94, 78 138, 122 110 C 142 98, 156 114, 172 106'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #b5cbbd;
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #7fa28d;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .animate-slideUp {
+    animation: none;
+  }
+}
