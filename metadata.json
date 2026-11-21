@@ -1,0 +1,10 @@
+{
+  "name": "Remix Forest Treatment Map Generator",
+  "description": "Professional forestry survey grid base map generator from KML, KMZ, and GPX files with baseline dragging, section lines, edge GPS, strict scale A4/A3 PDF export, and mobile touch pinch-zoom.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
