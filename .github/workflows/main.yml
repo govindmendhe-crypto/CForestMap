@@ -1,0 +1,67 @@
+name: Build Android APK & Play Store AAB
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Debug APK (direct install) or Release AAB (Play Store)'
+        required: true
+        default: 'debug-apk'
+        type: choice
+        options:
+          - debug-apk
+          - release-unsigned-aab
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Build web bundle & sync Android project
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        if: ${{ inputs.build_type == 'debug-apk' }}
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Build Release AAB (Unsigned)
+        if: ${{ inputs.build_type == 'release-unsigned-aab' }}
+        working-directory: android
+        run: ./gradlew bundleRelease
+
+      - name: Upload Debug APK artifact
+        if: ${{ inputs.build_type == 'debug-apk' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForestTreatmentMap-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release AAB artifact
+        if: ${{ inputs.build_type == 'release-unsigned-aab' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForestTreatmentMap-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
